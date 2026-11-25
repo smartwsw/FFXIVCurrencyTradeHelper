@@ -220,7 +220,12 @@
   tbody tr.currency-row td {
     padding: 11px 12px; border-bottom: 1px solid var(--line);
     font-weight: 600; position: sticky; top: 37px; z-index: 1;
+    /* 表头吸附在顶部时会浮在数据行上面，必须是不透明背景，
+       否则下面的物品行会透出来（看起来像「折叠透明度有问题」）。
+       给整格一个实心底色，并把变量复用过来。 */
+    background: var(--currency-row);
   }
+  tbody tr.currency-row:hover td { background: var(--currency-row-hover); }
   .chev { display: inline-block; width: 14px; color: var(--muted); transition: transform .15s; }
   tr.collapsed .chev { transform: rotate(-90deg); }
 
@@ -563,6 +568,15 @@ function renderStatus() {
     t("updatedAt", { t: when.toLocaleString(loc, { hour12: false }) });
 }
 
+/** 商店名按语言显示。数据里带了中文译名 sZh（Garland 各语言文档的商店名都是英文），
+ *  英文/日文界面直接用 Garland 原名。 */
+function shopName(name) {
+  if (!name) return "";
+  if (LANG !== "zh") return name;
+  const rec = state.shopZh && state.shopZh.get(name);
+  return rec || name;
+}
+
 function setLang(lang, { rerender = true } = {}) {
   LANG = LANGS.includes(lang) ? lang : "zh";
   try { localStorage.setItem(LANG_KEY, LANG); } catch { /* ignore */ }
@@ -879,6 +893,7 @@ function buildRows() {
         cost: it.c,
         amount: it.a || 1,
         shop: it.s,
+        shopZh: it.sZh || it.s,
         extras: it.o || [],
         icon: it.id,
         // 图标文件名用的是「图标 id」，不是物品 id；用 itemId 拼地址会取到别的物品的图
@@ -1001,10 +1016,10 @@ function rowHtml(r) {
   // 兑换路径：一级兑换（本货币）→ 二级兑换（一级产物不可交易，需再换一次）
   const path = r.hop
     ? `<span class="path" title="${esc(t("hopTitle", { mid: r.hopItem }))}">
-         <b>${esc(r.shop)}</b> <span class="arrow">→</span>
-         <b>${esc(r.hop.shop)}</b> <span class="dim">${esc(t("hopVia", { mid: r.hopItem, n: fmt.format(r.hop.need) }))}</span>
+         <b>${esc(shopName(r.shop))}</b> <span class="arrow">→</span>
+         <b>${esc(shopName(r.hop.shop))}</b> <span class="dim">${esc(t("hopVia", { mid: r.hopItem, n: fmt.format(r.hop.need) }))}</span>
        </span>`
-    : `<span class="path dim">${esc(r.shop)}</span>`;
+    : `<span class="path dim">${esc(shopName(r.shop))}</span>`;
   return `<tr>
     <td>
       <div class="item">
@@ -1274,6 +1289,15 @@ async function boot() {
   // 物品 id → 名字，用于显示二级兑换路径里的中间物
   state.itemNames = new Map();
   for (const c of data.currencies) for (const it of c.items) state.itemNames.set(it.id, it.n);
+
+  // 英文商店名 → 中文译名（后端已经翻好并写在 sZh 里，这里建反查表）
+  state.shopZh = new Map();
+  for (const c of data.currencies) {
+    for (const it of c.items) {
+      if (it.sZh && it.sZh !== it.s) state.shopZh.set(it.s, it.sZh);
+      if (it.h && it.h[0] && it.h[0].sZh) state.shopZh.set(it.h[0].s, it.h[0].sZh);
+    }
+  }
 
   // 只有一种货币时，货币下拉框没有意义，藏起来
   const cfield = $("currency").closest(".field");

@@ -25,6 +25,7 @@ from datetime import datetime, timezone, timedelta
 import garland
 import localize
 import secondhop
+import shopnames
 import universalis
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -438,6 +439,7 @@ def build_market_map(npcs: list[dict], index: dict, zh: dict,
                                     "id": first_id,
                                     "need": need,
                                     "s": shop["shop"],
+                                    "sZh": shopnames.localize_shop(shop["shop"], "zh"),
                                     "ta": target.get("amount") or 1,
                                     **({"o": others2} if others2 else {}),
                                 }],
@@ -490,6 +492,8 @@ def build_market_map(npcs: list[dict], index: dict, zh: dict,
                 "c": o["c"],
                 "a": o["a"],
                 "s": o["s"],
+                # 商店名的中文译名（Garland 各语言文档里的商店名都是英文）
+                "sZh": shopnames.localize_shop(o["s"], "zh"),
                 **({"o": o["o"]} if o["o"] else {}),
                 # 只给「独占」物品打标，普通物品不写这个字段，省体积
                 **({"x": 1} if iinfo["exclusive"] else {}),
@@ -512,6 +516,8 @@ def build_market_map(npcs: list[dict], index: dict, zh: dict,
                 "c": total_cost,
                 "a": raw["a"],
                 "s": raw["s"],
+                # 商店名的中文译名（Garland 各语言文档里的商店名都是英文）
+                "sZh": shopnames.localize_shop(raw["s"], "zh"),
                 "h": [hop],
                 **({"o": raw["o"]} if raw["o"] else {}),
             }
