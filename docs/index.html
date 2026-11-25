@@ -1,0 +1,1359 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>今天卖什么</title>
+<link rel="preconnect" href="https://universalis.app">
+<style>
+  /* 配色：默认暗色；data-theme="light" 切亮色；data-theme="auto" 跟随系统 */
+  :root {
+    --bg: #0e1014;
+    --panel: #161a21;
+    --panel-2: #1c222c;
+    --line: #262d39;
+    --text: #e6e9ef;
+    --muted: #8b95a7;
+    --accent: #d4a13c;
+    --accent-2: #6fb3ff;
+    --good: #4ecb8b;
+    --warn: #e8b34b;
+    --bad: #e4646b;
+    --row-hover: #1f2631;
+    --row-line: #1b2129;
+    --currency-row: #12161d;
+    --currency-row-hover: #161c25;
+    --track-bg: #2c3442;
+    --track-knob: #cfd6e2;
+    --track-on: #2f6b4b;
+    --track-knob-on: #7fe3ad;
+    --badge-bg: #232a36;
+    --badge-extra-bg: #2a2320;
+    --badge-extra-fg: #e0a86a;
+    --badge-hop-bg: #1f2a38;
+    --badge-hop-fg: #7fb2e8;
+    --path-b: #9fb0c8;
+    --header-top: #14181f;
+    --footer-bg: #0b0d11;
+    --img-bg: #000;
+    color-scheme: dark;
+  }
+  :root[data-theme="light"] {
+    --bg: #f5f6f8;
+    --panel: #ffffff;
+    --panel-2: #ffffff;
+    --line: #d7dce4;
+    --text: #1c2430;
+    --muted: #66707e;
+    --accent: #a06a00;
+    --accent-2: #1f6fd0;
+    --good: #16844f;
+    --warn: #a86a00;
+    --bad: #c0363e;
+    --row-hover: #eef2f8;
+    --row-line: #e9edf3;
+    --currency-row: #eef1f6;
+    --currency-row-hover: #e6ebf3;
+    --track-bg: #c9d1dc;
+    --track-knob: #ffffff;
+    --track-on: #2f8f5b;
+    --track-knob-on: #ffffff;
+    --badge-bg: #e8edf4;
+    --badge-extra-bg: #fbf0dd;
+    --badge-extra-fg: #9a6412;
+    --badge-hop-bg: #e3edfa;
+    --badge-hop-fg: #1f6fd0;
+    --path-b: #4a5a70;
+    --header-top: #ffffff;
+    --footer-bg: #eceff4;
+    --img-bg: #dfe4ea;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: light) {
+    :root[data-theme="auto"] {
+      --bg: #f5f6f8;
+      --panel: #ffffff;
+      --panel-2: #ffffff;
+      --line: #d7dce4;
+      --text: #1c2430;
+      --muted: #66707e;
+      --accent: #a06a00;
+      --accent-2: #1f6fd0;
+      --good: #16844f;
+      --warn: #a86a00;
+      --bad: #c0363e;
+      --row-hover: #eef2f8;
+      --row-line: #e9edf3;
+      --currency-row: #eef1f6;
+      --currency-row-hover: #e6ebf3;
+      --track-bg: #c9d1dc;
+      --track-knob: #ffffff;
+      --track-on: #2f8f5b;
+      --track-knob-on: #ffffff;
+      --badge-bg: #e8edf4;
+      --badge-extra-bg: #fbf0dd;
+      --badge-extra-fg: #9a6412;
+      --badge-hop-bg: #e3edfa;
+      --badge-hop-fg: #1f6fd0;
+      --path-b: #4a5a70;
+      --header-top: #ffffff;
+      --footer-bg: #eceff4;
+      --img-bg: #dfe4ea;
+      color-scheme: light;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font: 14px/1.5 "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+    display: flex;
+    flex-direction: column;
+  }
+  a { color: var(--accent-2); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  header {
+    padding: 14px 20px 10px;
+    border-bottom: 1px solid var(--line);
+    background: linear-gradient(180deg, var(--header-top), var(--bg));
+  }
+  .title-row { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  /* 右上角的主题 / 语言分段按钮 */
+  .prefs { display: flex; gap: 10px; align-items: center; }
+  .seg { display: flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+  .seg button {
+    background: var(--panel-2); color: var(--muted); border: 0; cursor: pointer;
+    font: inherit; font-size: 12px; padding: 4px 10px; line-height: 1.4;
+    border-right: 1px solid var(--line);
+  }
+  .seg button:last-child { border-right: 0; }
+  .seg button:hover { color: var(--text); }
+  .seg button.on { background: var(--accent); color: #1a1206; font-weight: 600; }
+  h1 { font-size: 18px; margin: 0; font-weight: 600; letter-spacing: .3px; }
+  h1 .gold { color: var(--accent); }
+  .meta { color: var(--muted); font-size: 12px; }
+  .meta b { color: var(--text); font-weight: 600; }
+
+  /* 顶部控件对齐：所有列都按「标签 / 控件 / 说明」三行排，缺的那行用空占位撑住，
+     这样每个下拉框和输入框都落在同一条基线上。 */
+  .controls {
+    display: flex; gap: 14px; align-items: flex-end; flex-wrap: wrap;
+    margin-top: 12px;
+  }
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field label { font-size: 11px; color: var(--muted); letter-spacing: .4px; line-height: 16px; }
+  .hint { font-size: 10px; color: var(--muted); line-height: 12px; height: 12px; }
+  .ctl { height: 33px; }
+  .switch-wrap {
+    display: flex; flex-direction: column; gap: 4px;
+    justify-content: flex-end; height: 100%;
+  }
+  .chips-row { margin-top: 10px; }
+  select, input[type="search"], input[type="number"] {
+    background: var(--panel-2); color: var(--text);
+    border: 1px solid var(--line); border-radius: 6px;
+    padding: 6px 9px; font: inherit; font-size: 13px; outline: none;
+    box-sizing: border-box;
+  }
+  select.ctl, input.ctl { height: 33px; }
+  .btn {
+    background: var(--panel-2); color: var(--text); border: 1px solid var(--line);
+    border-radius: 6px; padding: 0 14px; font: inherit; font-size: 13px; cursor: pointer;
+    white-space: nowrap; transition: border-color .15s, color .15s, background .15s;
+  }
+  .btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  .btn:disabled { opacity: .55; cursor: progress; }
+  .world-static {
+    background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px;
+    padding: 6px 9px; font-size: 13px; color: var(--text); min-height: 31px;
+    display: flex; align-items: center;
+  }
+  select:focus, input:focus { border-color: var(--accent-2); }
+  select:disabled { opacity: .65; cursor: not-allowed; }
+  input[type="search"] { width: 220px; }
+
+  .switch { display: flex; align-items: center; gap: 9px; cursor: pointer; user-select: none; }
+  .switch input { display: none; }
+  .track {
+    width: 40px; height: 22px; border-radius: 11px; background: var(--track-bg);
+    position: relative; transition: background .18s; flex: none;
+  }
+  .track::after {
+    content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px;
+    border-radius: 50%; background: var(--track-knob); transition: transform .18s, background .18s;
+  }
+  .switch input:checked + .track { background: var(--track-on); }
+  .switch input:checked + .track::after { transform: translateX(18px); background: var(--track-knob-on); }
+  .switch.active .track { box-shadow: 0 0 0 2px #2e4a3a; }
+  .switch-text { display: flex; flex-direction: column; line-height: 1.25; }
+  .switch-text b { font-size: 13px; font-weight: 600; }
+  .switch-text span { font-size: 11px; color: var(--muted); }
+
+  .spacer { flex: 1; }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip {
+    background: var(--panel-2); border: 1px solid var(--line); color: var(--muted);
+    padding: 4px 10px; border-radius: 999px; font-size: 12px; cursor: pointer;
+  }
+  .chip.active { border-color: var(--accent); color: var(--accent); background: #221d12; }
+
+  main { flex: 1; overflow: auto; }
+  table { width: 100%; border-collapse: separate; border-spacing: 0; font-variant-numeric: tabular-nums; }
+  thead th {
+    position: sticky; top: 0; z-index: 2;
+    background: var(--panel); border-bottom: 1px solid var(--line);
+    text-align: right; font-size: 12px; font-weight: 600; color: var(--muted);
+    padding: 9px 12px; white-space: nowrap; cursor: pointer;
+  }
+  thead th:first-child { text-align: left; }
+  thead th.sorted { color: var(--accent); }
+  thead th .arrow { opacity: .55; margin-left: 2px; font-size: 10px; }
+  thead th.static { cursor: default; }
+
+  tbody td { padding: 7px 12px; border-bottom: 1px solid var(--row-line); text-align: right; vertical-align: middle; }
+  tbody td:first-child { text-align: left; }
+  tbody tr:hover { background: var(--row-hover); }
+  tbody tr.currency-row { background: var(--currency-row); }
+  tbody tr.currency-row:hover { background: var(--currency-row-hover); }
+  tbody tr.currency-row td {
+    padding: 11px 12px; border-bottom: 1px solid var(--line);
+    font-weight: 600; position: sticky; top: 37px; z-index: 1;
+  }
+  .chev { display: inline-block; width: 14px; color: var(--muted); transition: transform .15s; }
+  tr.collapsed .chev { transform: rotate(-90deg); }
+
+  .item { display: flex; align-items: center; gap: 9px; min-width: 0; }
+  .item img {
+    width: 26px; height: 26px; border-radius: 4px; background: var(--img-bg); flex: none;
+    image-rendering: -webkit-optimize-contrast;
+  }
+  .item .names { display: flex; flex-direction: column; min-width: 0; }
+  .item .names .n { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .item .names .e { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .shop { font-size: 11px; color: var(--muted); max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .per { color: var(--good); font-weight: 700; font-size: 15px; }
+  .price { color: var(--text); font-weight: 600; }
+  .dim { color: var(--muted); }
+  .badge {
+    display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 11px;
+    background: var(--badge-bg); color: var(--muted); white-space: nowrap;
+  }
+  .badge.extra { background: var(--badge-extra-bg); color: var(--badge-extra-fg); }
+  .badge.hop2 { background: var(--badge-hop-bg); color: var(--badge-hop-fg); }
+  /* 兑换路径：一级商店 → 二级商店（经由中间物） */
+  .path { font-size: 11px; color: var(--muted); display: block; line-height: 1.35;
+          max-width: 420px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .path b { color: var(--path-b); font-weight: 500; }
+  .path .arrow { color: var(--accent); margin: 0 4px; }
+  .vol-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
+  .vol-low { background: var(--bad); }
+  .vol-mid { background: var(--warn); }
+  .vol-ok { background: var(--good); }
+  .sold { font-size: 10px; color: var(--muted); margin-left: 5px; }
+  .sold.warn { color: #b9757a; }
+  .na { color: #59626f; }
+
+  footer {
+    border-top: 1px solid var(--line); padding: 8px 20px; font-size: 11px; color: var(--muted);
+    display: flex; gap: 16px; flex-wrap: wrap; align-items: center; background: var(--footer-bg);
+  }
+  .load { padding: 60px 20px; text-align: center; color: var(--muted); }
+  .bar { height: 3px; background: #1d242e; border-radius: 2px; overflow: hidden; margin-top: 10px; }
+  .bar > i { display: block; height: 100%; width: 30%; background: var(--accent); animation: slide 1.1s infinite; }
+  @keyframes slide { from { transform: translateX(-100%);} to { transform: translateX(340%);} }
+  .empty { padding: 40px; text-align: center; color: var(--muted); }
+  .totals { font-size: 12px; color: var(--muted); }
+  .totals b { color: var(--text); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title-row">
+    <h1><span class="gold" id="appTitle">今天卖什么</span></h1>
+    <span class="meta" id="status">正在载入…</span>
+    <span class="spacer"></span>
+    <div class="prefs">
+      <div class="seg" id="themeSeg" role="group" aria-label="主题">
+        <button data-theme="auto" title="跟随系统">自动</button>
+        <button data-theme="light" title="亮色">亮</button>
+        <button data-theme="dark" title="暗色">暗</button>
+      </div>
+      <div class="seg" id="langSeg" role="group" aria-label="语言">
+        <button data-lang="zh">中文</button>
+        <button data-lang="en">EN</button>
+        <button data-lang="ja">日本語</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="field">
+      <label>服务器</label>
+      <select id="world" class="ctl"></select>
+      <span id="worldHint" class="hint"></span>
+    </div>
+    <div class="field">
+      <label>&nbsp;</label>
+      <button id="refreshPrice" class="btn ctl" title="忽略 24 小时缓存，立即从 Universalis 重新拉取当前服务器的价格">更新价格</button>
+      <span id="refreshedAt" class="hint"></span>
+    </div>
+    <div class="field">
+      <label>货币</label>
+      <select id="currency" class="ctl"><option value="">全部货币</option></select>
+      <span class="hint"></span>
+    </div>
+    <div class="field">
+      <label>搜索物品</label>
+      <input id="q" type="search" class="ctl" placeholder="中文 / 英文名，如 神典石">
+      <span class="hint"></span>
+    </div>
+
+    <div class="switch-wrap">
+      <label class="switch" title="滤掉没人买的、以及近 7 天完全没有成交记录的物品，只留下真正卖得动的">
+        <input id="excludeLowVol" type="checkbox">
+        <span class="track"></span>
+        <span class="switch-text">
+          <b>排除低成交量</b>
+        </span>
+      </label>
+      <span class="hint" id="volHintText">去掉日成交 &lt; <span id="volLimitLabel">5</span> 件和无成交的物品</span>
+    </div>
+
+    <div class="field">
+      <label>成交量阈值（件/天）</label>
+      <input id="volLimit" type="number" class="ctl" min="0" step="1" value="5" style="width:80px">
+      <span class="hint"></span>
+    </div>
+
+    <div class="field">
+      <label>在售件数 ≤</label>
+      <input id="maxUnits" type="number" class="ctl" min="0" step="10" value="0" style="width:88px"
+             title="国服 Universalis 的成交记录经常为空，此时用「同时在售件数」判断冷热：数值越小说明挂的人越少">
+      <span class="hint"></span>
+    </div>
+
+    <div class="field">
+      <label>最低单价（金币/单位）</label>
+      <input id="minPer" type="number" class="ctl" min="0" step="10" value="0" style="width:100px">
+      <span class="hint"></span>
+    </div>
+
+    <div class="field">
+      <label>货币花费 ≥</label>
+      <input id="minCost" type="number" class="ctl" min="1" step="10" value="1" style="width:88px"
+             title="只看花费达到这个数量的兑换。默认 1 = 全部显示；调高可以滤掉小额兑换（比如用 1 张票换的鱼饵）">
+      <span class="hint"></span>
+    </div>
+
+    <div class="spacer"></div>
+    <div class="chips" id="chips"></div>
+  </div>
+</header>
+
+<main id="main">
+  <div class="load">
+    <div>正在读取数据…</div>
+    <div class="bar"><i></i></div>
+  </div>
+</main>
+
+<footer>
+  <span id="footSrc">数据来源：<a href="https://www.garlandtools.org/" target="_blank" rel="noopener">Garland Tools</a>（兑换表）·
+    <a href="https://universalis.app/" target="_blank" rel="noopener">Universalis</a>（市场价）</span>
+  <span class="totals" id="totals"></span>
+  <span class="spacer"></span>
+  <span id="footCalc">每单位货币卖价 = 最低挂单价 × 兑换数量 ÷ 货币花费（不含税、不含其它材料）</span>
+</footer>
+
+<script>
+"use strict";
+
+const ICON = (id) => `https://www.garlandtools.org/files/icons/item/${id}.png`;
+
+/* ---------------- 主题（明 / 暗 / 跟随系统） ---------------- */
+const THEME_KEY = "whattosell.theme";
+const THEMES = ["auto", "light", "dark"];
+
+function applyTheme(mode) {
+  const t = THEMES.includes(mode) ? mode : "auto";
+  document.documentElement.setAttribute("data-theme", t);
+  try { localStorage.setItem(THEME_KEY, t); } catch { /* 隐私模式下忽略 */ }
+  for (const b of document.querySelectorAll("#themeSeg button")) {
+    b.classList.toggle("on", b.dataset.theme === t);
+  }
+}
+
+function initTheme() {
+  let saved = null;
+  try { saved = localStorage.getItem(THEME_KEY); } catch { /* ignore */ }
+  applyTheme(saved || "auto");
+  const seg = $("themeSeg");
+  if (seg) seg.addEventListener("click", (e) => {
+    const b = e.target.closest("button");
+    if (b) applyTheme(b.dataset.theme);
+  });
+  // 跟随系统时，系统配色变化要跟着变（属性不用改，CSS 的 media query 会处理，
+  // 但手动刷新一次可以让浏览器重算）
+  if (window.matchMedia) {
+    const mq = window.matchMedia("(prefers-color-scheme: light)");
+    const onChange = () => {
+      if (document.documentElement.getAttribute("data-theme") === "auto") applyTheme("auto");
+    };
+    if (mq.addEventListener) mq.addEventListener("change", onChange);
+    else if (mq.addListener) mq.addListener(onChange);
+  }
+}
+
+/* ---------------- 语言（中文 / EN / 日本語） ---------------- */
+const LANG_KEY = "whattosell.lang";
+const LANGS = ["zh", "en", "ja"];
+let LANG = "zh";
+
+// 界面文案
+const I18N = {
+  zh: {
+    title: "今天卖什么",
+    server: "服务器", currency: "货币", search: "搜索物品",
+    searchHint: "中文 / 英文名，如 神典石",
+    excludeLowVol: "排除低成交量",
+    excludeLowVolHint: "去掉日成交 < {n} 件和无成交的物品",
+    volLimit: "成交量阈值（件/天）", maxUnits: "在售件数 ≤",
+    minPer: "最低单价（金币/单位）", minCost: "货币花费 ≥",
+    minCostHint: "只看花费达到这个数量的兑换。默认 1 = 全部显示",
+    refresh: "更新价格", refreshing: "更新中…",
+    colItem: "物品", colCost: "货币花费", colUnit: "最低单价", colValue: "兑换可得",
+    colPer: "每单位货币", colHist: "均价折合", colVol: "日成交", colListings: "挂单数",
+    noDeal: "无成交", dealUnit: "件",
+    volTitle: "近 7 天日均成交 {n} 件", soldTitle: "近 7 天共成交 {n} 件",
+    noDealTitle: "近 7 天完全没有成交记录，挂单价不一定卖得掉",
+    allCurrencies: "全部货币",
+    loading: "正在载入…", pulling: "正在从 Universalis 拉价…",
+    pullBatches: "正在从 Universalis 拉价… {done}/{total} 批",
+    hasPrices: "{n} 个物品有行情", switchFetches: "切换后现场拉价",
+    updatedMin: "{m} 分钟前更新，{h} 小时后过期",
+    updatedHour: "{m} 小时前更新，{h} 小时后过期",
+    itemsLabel: "{n} 种可兑换物品", filteredLabel: "（当前筛选 {c}）",
+    countLine: "共 {n} 条兑换记录，有挂单 {p} 条",
+    topItem: "当前排第一：{name} {per} 金币/单位",
+    excludedNote: " · 已排除日成交 < {n} 件/天或无成交的物品",
+    hopBadge: "二级兑换", hopTitle: "两步兑换：先用货币换「{mid}」，再换成本物品",
+    hopVia: "经由 {mid} ×{n}",
+    extraTitle: "还需 {n} 种材料", extraBadge: "+{n}",
+    noData: "没有符合条件的物品。试试关掉「排除低成交量」或把阈值调大。",
+    more: "继续加载（已显示 {shown} / {total} 条）",
+    footSrc: "数据来源：{garland}（兑换表）· {uni}（市场价）",
+    footCalc: "每单位货币卖价 = 最低挂单价 × 兑换数量 ÷ 货币花费（不含税、不含其它材料）",
+    quickAll: "全部", quickLowVol: "排除低成交量",
+    failedFetch: "「{w}」价格拉取失败：{e}",
+    partialFail: "有 {f}/{t} 批请求失败，部分物品暂无价格",
+    verLabel: "游戏版本 {v}", curCount: "货币 {n} 种", rowCount: "可兑换物品 {n} 条",
+    updatedAt: "更新于 {t}",
+  },
+  en: {
+    title: "What to Sell Today",
+    server: "Server", currency: "Currency", search: "Search item",
+    searchHint: "Chinese / English name",
+    excludeLowVol: "Hide low volume",
+    excludeLowVolHint: "Drop items under {n} sales/day or with no sales",
+    volLimit: "Sales threshold (/day)", maxUnits: "Units for sale ≤",
+    minPer: "Min unit price (gil)", minCost: "Currency cost ≥",
+    minCostHint: "Only show exchanges costing at least this much. 1 = show all",
+    refresh: "Refresh prices", refreshing: "Refreshing…",
+    colItem: "Item", colCost: "Cost", colUnit: "Lowest price", colValue: "Per exchange",
+    colPer: "Gil per unit", colHist: "Avg. price", colVol: "Sales/day", colListings: "Listings",
+    noDeal: "no sales", dealUnit: "",
+    volTitle: "{n} sales/day over the last 7 days", soldTitle: "{n} units sold in the last 7 days",
+    noDealTitle: "No sales in the last 7 days — the listing price may never sell",
+    allCurrencies: "All currencies",
+    loading: "Loading…", pulling: "Fetching prices from Universalis…",
+    pullBatches: "Fetching prices from Universalis… {done}/{total}",
+    hasPrices: "{n} items priced", switchFetches: "Prices load after switching",
+    updatedMin: "updated {m} min ago, expires in {h} h",
+    updatedHour: "updated {m} h ago, expires in {h} h",
+    itemsLabel: "{n} exchangeable items", filteredLabel: " (filtered: {c})",
+    countLine: "{n} exchanges, {p} with listings",
+    topItem: "Top: {name} {per} gil/unit",
+    excludedNote: " · excluded items under {n} sales/day or with no sales",
+    hopBadge: "2-step", hopTitle: "Two-step exchange: buy \"{mid}\" first, then trade for this",
+    hopVia: "via {mid} ×{n}",
+    extraTitle: "{n} more materials required", extraBadge: "+{n}",
+    noData: "Nothing matches. Try disabling \"Hide low volume\" or raising the threshold.",
+    more: "Load more ({shown} / {total})",
+    footSrc: "Sources: {garland} (exchange tables) · {uni} (market prices)",
+    footCalc: "Gil per unit = lowest listing × amount ÷ currency cost (excl. tax and other materials)",
+    quickAll: "All", quickLowVol: "Hide low volume",
+    failedFetch: "Failed to load prices for \"{w}\": {e}",
+    partialFail: "{f}/{t} batches failed, some items have no price",
+    verLabel: "Patch {v}", curCount: "{n} currencies", rowCount: "{n} exchanges",
+    updatedAt: "updated {t}",
+  },
+  ja: {
+    title: "今日は何を売る？",
+    server: "サーバー", currency: "通貨", search: "アイテム検索",
+    searchHint: "日本語 / 英語名",
+    excludeLowVol: "低取引量を除外",
+    excludeLowVolHint: "1日 {n} 件未満・取引なしを除外",
+    volLimit: "取引量のしきい値（/日）", maxUnits: "出品数 ≤",
+    minPer: "最低単価（ギル）", minCost: "通貨コスト ≥",
+    minCostHint: "このコスト以上の交換のみ表示。1 = すべて表示",
+    refresh: "価格を更新", refreshing: "更新中…",
+    colItem: "アイテム", colCost: "コスト", colUnit: "最安値", colValue: "交換あたり",
+    colPer: "通貨1あたり", colHist: "平均価格", colVol: "取引/日", colListings: "出品数",
+    noDeal: "取引なし", dealUnit: "件",
+    volTitle: "直近7日の1日平均取引 {n} 件", soldTitle: "直近7日の取引合計 {n} 件",
+    noDealTitle: "直近7日は取引なし。出品価格では売れない可能性があります",
+    allCurrencies: "すべての通貨",
+    loading: "読み込み中…", pulling: "Universalis から価格を取得中…",
+    pullBatches: "Universalis から価格を取得中… {done}/{total}",
+    hasPrices: "{n} 件の価格あり", switchFetches: "切替後に取得します",
+    updatedMin: "{m} 分前に更新、{h} 時間で期限切れ",
+    updatedHour: "{m} 時間前に更新、{h} 時間で期限切れ",
+    itemsLabel: "交換可能 {n} 件", filteredLabel: "（絞り込み {c}）",
+    countLine: "交換 {n} 件、出品あり {p} 件",
+    topItem: "トップ：{name} {per} ギル/単位",
+    excludedNote: " · 1日 {n} 件未満・取引なしを除外しました",
+    hopBadge: "2段階", hopTitle: "2段階交換：「{mid}」を経由して入手",
+    hopVia: "{mid} ×{n} 経由",
+    extraTitle: "他に {n} 種の素材が必要", extraBadge: "+{n}",
+    noData: "該当なし。「低取引量を除外」を切るか、しきい値を上げてください。",
+    more: "さらに読み込む（{shown} / {total}）",
+    footSrc: "データ元：{garland}（交換表）· {uni}（市場価格）",
+    footCalc: "通貨1あたり = 最安出品 × 交換数 ÷ 通貨コスト（税・他素材を除く）",
+    quickAll: "すべて", quickLowVol: "低取引量を除外",
+    failedFetch: "「{w}」の価格取得に失敗：{e}",
+    partialFail: "{f}/{t} バッチ失敗、一部の価格がありません",
+    verLabel: "パッチ {v}", curCount: "通貨 {n} 種", rowCount: "交換 {n} 件",
+    updatedAt: "更新 {t}",
+  },
+};
+
+/** 取文案并替换 {占位符}。 */
+function t(key, vars) {
+  const pack = I18N[LANG] || I18N.zh;
+  let s = pack[key] != null ? pack[key] : (I18N.zh[key] != null ? I18N.zh[key] : key);
+  if (vars) for (const [k, v] of Object.entries(vars)) s = s.split("{" + k + "}").join(v);
+  return s;
+}
+
+/** 物品名按语言取：zh 用中文名，en/ja 用对应字段，缺失时回退中文名并在旁边显示。 */
+function itemName(obj) {
+  // obj 可能是货币/物品原始数据（n / en / ja），也可能是列表行（name / nameEn / nameJa）
+  const zh = obj.n != null ? obj.n : obj.name;
+  const en = obj.en || obj.nameEn;
+  const ja = obj.ja || obj.nameJa;
+  if (LANG === "en") return en || zh || "";
+  if (LANG === "ja") return ja || zh || "";
+  return zh || "";
+}
+/** 顶栏状态行（切换语言时要重画）。 */
+function renderStatus() {
+  const el = $("status");
+  if (!el || !state.data) return;
+  const when = new Date(state.generatedAt);
+  const loc = LANG === "zh" ? "zh-CN" : LANG === "ja" ? "ja-JP" : "en-GB";
+  el.innerHTML =
+    `${t("verLabel", { v: "<b>" + esc(state.patch || "?") + "</b>" })} · ` +
+    `${t("curCount", { n: "<b>" + state.data.currencies.length + "</b>" })} · ` +
+    `${t("rowCount", { n: "<b>" + fmt.format(state.allRows.length) + "</b>" })} · ` +
+    `${t("server")} <b>${esc(state.world)}</b> · ` +
+    t("updatedAt", { t: when.toLocaleString(loc, { hour12: false }) });
+}
+
+function setLang(lang, { rerender = true } = {}) {
+  LANG = LANGS.includes(lang) ? lang : "zh";
+  try { localStorage.setItem(LANG_KEY, LANG); } catch { /* ignore */ }
+  document.documentElement.setAttribute("lang", LANG === "zh" ? "zh-CN" : LANG);
+  for (const b of document.querySelectorAll("#langSeg button")) {
+    b.classList.toggle("on", b.dataset.lang === LANG);
+  }
+  applyStaticText();
+  renderStatus();
+  if (rerender && state.data) {
+    state.limit = 300;
+    syncCurrencyCounts();
+    render();
+    updateWorldHint();
+  }
+}
+
+/** 刷新所有静态文案（按钮、列头、页脚等）。 */
+function applyStaticText() {
+  document.title = t("title");
+  const set = (id, s) => { const el = $(id); if (el) el.textContent = s; };
+  const setHtml = (id, s) => { const el = $(id); if (el) el.innerHTML = s; };
+  set("appTitle", t("title"));
+  const labels = document.querySelectorAll(".controls .field > label");
+  const order = ["server", "currency", "search", null, "volLimit", "maxUnits", "minPer", "minCost"];
+  // 按 .field 顺序对应文案（含「更新价格」那格用 null 跳过）
+  let i = 0;
+  for (const el of labels) {
+    const key = order[i++];
+    if (key) el.textContent = t(key);
+    else el.innerHTML = "&nbsp;";
+  }
+  const ph = $("q");
+  if (ph) ph.placeholder = t("searchHint");
+  const sw = document.querySelector(".switch .switch-text b");
+  if (sw) sw.textContent = t("excludeLowVol");
+  const swHint = $("volHintText");
+  if (swHint) swHint.textContent = t("excludeLowVolHint", { n: state.volLimit });
+  const btn = $("refreshPrice");
+  if (btn && !state.rowsLoading) btn.textContent = t("refresh");
+  const chips = document.querySelectorAll("#chips .chip");
+  if (chips.length >= 2) {
+    chips[0].textContent = t("quickAll");
+    chips[1].textContent = t("quickLowVol");
+  }
+  const src = document.getElementById("footSrc");
+  if (src) {
+    src.innerHTML = t("footSrc", {
+      garland: `<a href="https://www.garlandtools.org/" target="_blank" rel="noopener">Garland Tools</a>`,
+      uni: `<a href="https://universalis.app/" target="_blank" rel="noopener">Universalis</a>`,
+    });
+  }
+  set("footCalc", t("footCalc"));
+}
+
+function initLang() {
+  let saved = null;
+  try { saved = localStorage.getItem(LANG_KEY); } catch { /* ignore */ }
+  LANG = LANGS.includes(saved) ? saved : "zh";
+  // 必须走 setLang 才会给当前按钮加高亮（之前只设了 LANG 变量，
+  // 刷新后按钮全都不亮）。此时 state.data 还没加载，rerender 传 false。
+  setLang(LANG, { rerender: false });
+  const seg = $("langSeg");
+  if (seg) seg.addEventListener("click", (e) => {
+    const b = e.target.closest("button");
+    if (b) setLang(b.dataset.lang);
+  });
+}
+
+// 只保留这几种真正的「货币」（按国服中文名，避免写死 ID 在版本更新后失效）。
+// 其余条目在兑换表里只是材料 / 配方产物，不算货币。
+const CURRENCY_NAMES = [
+  "亚拉戈诗学神典石", "怪物狩猎的战利品", "天穹街振兴票", "双色宝石",
+  "宇宙信用点", "巧手紫票", "大地紫票", "巧手橙票", "大地橙票",
+];
+const DEFAULT_CURRENCY_NAME = "亚拉戈诗学神典石";
+const DEFAULT_WORLD = "海猫茶屋";   // 默认服务器
+// 「独占」物品（不可交易/不可上架）永远卖不掉，一律不显示。
+// 列表、货币下拉框括号、分组表头都用这一条口径，保证数字和实际行数对得上。
+const BARE_EXCLUDED = true;
+const state = {
+  data: null,
+  world: null,
+  sortKey: "per",
+  sortDir: -1,
+  excludeLowVol: false,
+  volLimit: 5,
+  minPer: 0,
+  // 默认 1 = 不过滤。之前默认 50 会把「1 张票换 1 个鱼饵」这类小额兑换一起挡掉
+  minCost: 1,
+  maxUnits: 0,
+  q: "",
+  currency: "",
+  worldMarkets: {},
+  rowsLoading: false,
+  fetchProgress: "",
+  generatedAt: null,
+  patch: "",
+  priceSource: "cache",
+  loadError: "",
+  collapsed: new Set(),
+  limit: 300,          // 首屏渲染上限，滚动加载
+};
+
+const $ = (id) => document.getElementById(id);
+const fmt = new Intl.NumberFormat("zh-CN", { maximumFractionDigits: 0 });
+const fmt2 = new Intl.NumberFormat("zh-CN", { maximumFractionDigits: 2 });
+
+/* ---------------------------------------------------------- 数据整理 */
+
+function marketFor(row) {
+  const w = state.worldMarkets;
+  return (w && w[String(row.itemId)]) || null;
+}
+
+function currentWorldData() {
+  return state.data.worlds.find(x => x.name === state.world) || null;
+}
+
+/* ---------------- 价格缓存（localStorage，24 小时有效） ----------------
+   价格数据量不大（几百到几千条），存进浏览器本地即可。
+   同一个服务器 24 小时内只拉一次，过期或手动点「更新价格」才会重新请求。 */
+const PRICE_TTL_MS = 24 * 60 * 60 * 1000;   // 24 小时
+const LS_KEY = "whattosell.prices.v1";
+
+function loadLocalPrices() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveLocalPrices(all) {
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify(all));
+  } catch (err) {
+    // 超出配额时只保留当前服务器，别让整体失效
+    try {
+      localStorage.setItem(LS_KEY, JSON.stringify({ [state.world]: all[state.world] }));
+    } catch { console.warn("价格缓存写入失败", err); }
+  }
+}
+
+/** 取一个服务器「仍然有效」的缓存；过期或无缓存返回 null。 */
+function cachedMarket(world) {
+  const rec = loadLocalPrices()[world];
+  if (!rec || !rec.markets || !Object.keys(rec.markets).length) return null;
+  const age = Date.now() - (rec.savedAt || 0);
+  return age >= 0 && age < PRICE_TTL_MS ? rec : null;
+}
+
+function cacheAgeText(world) {
+  const rec = loadLocalPrices()[world];
+  if (!rec || !rec.savedAt) return "";
+  const mins = Math.max(0, Math.round((Date.now() - rec.savedAt) / 60000));
+  const left = Math.max(0, Math.round((PRICE_TTL_MS - (Date.now() - rec.savedAt)) / 3600000));
+  return mins < 60 ? t("updatedMin", { m: mins, h: left }) : t("updatedHour", { m: Math.round(mins / 60), h: left });
+}
+
+/** 选中服务器。force=true 时忽略缓存强制重新拉价（手动更新按钮）。
+ *  默认优先用本地有效缓存 → 构建时预抓的数据 → 最后才真的联网。 */
+async function selectWorld(name, force = false) {
+  state.world = name;
+  state.loadError = "";
+
+  if (!force) {
+    const cached = cachedMarket(name);
+    if (cached) {
+      state.worldMarkets = cached.markets;
+      state.priceSource = "cache";
+      state.rowsLoading = false;
+      refresh();
+      return;
+    }
+    const known = currentWorldData();
+    if (known && Object.keys(known.markets || {}).length) {
+      // 构建时预抓的数据也算一份有效缓存，存下来并记上时间
+      const all = loadLocalPrices();
+      all[name] = { markets: known.markets, savedAt: (known.fetchedAt || Date.now() / 1000) * 1000 };
+      saveLocalPrices(all);
+      state.worldMarkets = known.markets;
+      state.priceSource = "bundled";
+      state.rowsLoading = false;
+      refresh();
+      return;
+    }
+  }
+
+  const known = currentWorldData();
+  state.worldMarkets = force ? state.worldMarkets : ((known && known.markets) || {});
+  state.rowsLoading = true;
+  state.priceSource = "fetch";
+  refresh();
+  try {
+    const markets = await fetchPrices(name, (done, total) => {
+      state.fetchProgress = `${done}/${total}`;
+      updateWorldHint();
+    });
+    const meta = markets.__meta || { total: 0, failed: 0 };
+    delete markets.__meta;
+    const all = loadLocalPrices();
+    all[name] = { markets, savedAt: Date.now() };
+    saveLocalPrices(all);
+    if (known) { known.markets = markets; known.fetchedAt = Date.now() / 1000; }
+    else state.data.worlds.push({ name, markets, fetchedAt: Date.now() / 1000 });
+    state.worldMarkets = markets;
+    state.priceSource = "fetch";
+    if (meta.failed) state.loadError = `有 ${meta.failed}/${meta.total} 批请求失败，部分物品暂无价格`;
+  } catch (err) {
+    console.warn("拉价失败", err);
+    state.loadError = t("failedFetch", { w: name, e: err.message });
+  } finally {
+    state.rowsLoading = false;
+    state.fetchProgress = "";
+    refresh();
+  }
+}
+
+/** 用 Universalis 批量接口拉一个服务器的价格。
+ *
+ *  之前的写法是一批接一批串行 await，只要任意一批超时（实测 Universalis
+ *  对部分批次会挂到 60 秒）整个更新就报 "Failed to fetch"，前面拉到的也白费。
+ *  现在：小并发 + 单批超时 + 失败重试，单批彻底失败只是少几个物品的价格，
+ *  并会把失败数量报告出来，不再让整次更新失败。 */
+async function fetchPrices(world, onProgress) {
+  const ids = [...new Set(state.allRows.map(r => Number(r.itemId)).filter(Number.isFinite))];
+  const out = {};
+  const BATCH = 100;
+  const batches = [];
+  for (let i = 0; i < ids.length; i += BATCH) batches.push(ids.slice(i, i + BATCH));
+
+  let done = 0;
+  let failedBatches = 0;
+  const CONCURRENCY = 4;
+
+  async function runBatch(chunk) {
+    // entries 决定成交统计的采样量（Universalis 用它算 unitsSold / velocity / 均价）：
+    //   entries=0 不计算（全 0）；entries=1 只采样 1 条会严重低估；100 才准
+    const url = `https://universalis.app/api/v2/${encodeURIComponent(world)}/${chunk.join(",")}?listings=6&entries=100`;
+    let lastErr = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 30000);   // 单批 30 秒
+      try {
+        const res = await fetch(url, { signal: ctrl.signal });
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const data = await res.json();
+        const items = data.items || { [chunk[0]]: data };
+        for (const [k, v] of Object.entries(items)) {
+          if (!v || !v.hasData) continue;
+          const prices = (v.listings || [])
+            .filter(l => l.pricePerUnit > 0)
+            .map(l => [Number(l.pricePerUnit), Number(l.quantity) || 0])
+            .sort((a, b) => a[0] - b[0]);
+          out[k] = {
+            minPrice: prices.length ? prices[0][0] : 0,
+            minLot: prices.length ? prices[0][1] : 0,
+            listingsCount: v.listingsCount || prices.length,
+            unitsForSale: v.unitsForSale || prices.reduce((s, p) => s + p[1], 0),
+            unitsSold: v.unitsSold || 0,
+            recentHistoryCount: v.recentHistoryCount || 0,
+            regularSaleVelocity: v.regularSaleVelocity || 0,
+            averagePrice: v.averagePrice || 0,
+            listings: prices.slice(0, 6).map(([price, qty]) => ({ price, qty })),
+          };
+        }
+        return true;
+      } catch (err) {
+        lastErr = err;
+      } finally {
+        clearTimeout(timer);
+      }
+      await new Promise(r => setTimeout(r, 800 * (attempt + 1)));
+    }
+    console.warn("批次失败", chunk[0], lastErr);
+    return false;
+  }
+
+  let cursor = 0;
+  async function worker() {
+    while (cursor < batches.length) {
+      const chunk = batches[cursor++];
+      const ok = await runBatch(chunk);
+      if (!ok) failedBatches++;
+      done++;
+      if (onProgress) onProgress(done, batches.length);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(CONCURRENCY, batches.length) }, worker));
+
+  out.__meta = { total: batches.length, failed: failedBatches };
+  if (failedBatches >= batches.length) throw new Error("Universalis 请求全部失败，请稍后重试");
+  return out;
+}
+
+/** 为每条（货币, 物品）兑换记录算出售价、每单位收益、成交量。 */
+function buildRows() {
+  const rows = [];
+  for (const cur of state.data.currencies) {
+    for (const it of cur.items) {
+      if (it.c < 1) continue;
+      rows.push({
+        currencyId: cur.id,
+        currency: cur.n,
+        currencyEn: cur.en || "",
+        currencyJa: cur.ja || "",
+        currencyPatch: cur.p,
+        itemId: it.id,
+        name: it.n,
+        nameEn: it.en || "",
+        nameJa: it.ja || "",
+        cost: it.c,
+        amount: it.a || 1,
+        shop: it.s,
+        extras: it.o || [],
+        icon: it.id,
+        // 图标文件名用的是「图标 id」，不是物品 id；用 itemId 拼地址会取到别的物品的图
+        iconId: it.ic || it.id,
+        currencyIcon: cur.icon,
+        // 「独占」属性：不可交易/不可上架，永远卖不掉
+        exclusive: it.x === 1,
+        // 二级兑换路径：{id, c(再兑换所需货币), s(二级商店), ta(每次产出), o}
+        hop: (it.h && it.h[0]) || null,
+        // 二级兑换的中间物名字（用于显示路径），下面按货币表补全
+        hopItemId: (it.h && it.h[0]) ? it.h[0].id : null,
+      });
+    }
+  }
+  return rows;
+}
+
+function decorate(row) {
+  const m = marketFor(row);
+  const qty = row.amount;
+  const min = m ? m.minPrice : 0;
+  const unitPrice = min > 0 ? min : 0;                 // 每件售价（最低挂单单价）
+  // 兑换数量：一级是一次换多少；二级是「一次二级兑换产出多少」
+  const value = unitPrice * qty;                        // 一次（完整路径）能卖多少钱
+  const per = value / row.cost;                         // 每单位货币收入
+  const avg = m ? m.averagePrice || 0 : 0;
+  const histValuePer = avg > 0 ? (avg * qty) / row.cost : 0;
+  row.per = per;
+  row.value = value;
+  row.unitPrice = unitPrice;
+  row.histPer = histValuePer;
+  row.velocity = m ? m.regularSaleVelocity || 0 : 0;
+  row.unitsSold = m ? m.unitsSold || 0 : 0;
+  row.listingsCount = m ? m.listingsCount || 0 : 0;
+  row.unitsForSale = m ? m.unitsForSale || 0 : 0;
+  row.minLot = m ? m.minLot || 0 : 0;
+  row.hasData = !!m && unitPrice > 0;
+  // 二级兑换：补上中间物名字（need/shop 等其余字段构建时已经算好，不要在这里改写）
+  if (row.hop) {
+    const mid = state.itemNames && state.itemNames.get(row.hopItemId);
+    row.hopItem = mid || `#${row.hopItemId}`;
+  }
+  // 冷门（成交量低）= 没人买 + 没人挂。
+  //   有成交记录时只看日成交件数；
+  //   国服成交历史经常为空，此时退回用「同时在售件数」：件数少 = 冷门，多 = 热门。
+  const inSale = row.unitsForSale;
+  const hasHistory = row.velocity > 0 || row.unitsSold > 0;
+  const coldBySales = hasHistory ? row.velocity < state.volLimit : inSale <= Math.max(20, state.volLimit * 6);
+  row.cold = row.hasData && coldBySales;
+  // 反过来定义「有成交量」：近 7 天确实成交过，且日均成交不低于阈值。
+  // 没有价格的当然也谈不上成交。
+  row.trades = row.hasData && hasHistory && row.velocity >= state.volLimit;
+  row.volClass = !row.hasData ? "vol-low"
+              : !hasHistory ? (inSale <= 20 ? "vol-low" : inSale <= 60 ? "vol-mid" : "vol-ok")
+              : row.velocity < state.volLimit ? "vol-low"
+              : row.velocity < state.volLimit * 2 ? "vol-mid" : "vol-ok";
+  return row;
+}
+
+/* ---------------------------------------------------------- 筛选与排序 */
+
+function visibleRows(all, opts = {}) {
+  const q = state.q.trim().toLowerCase();
+  let rows = all.filter(r => {
+    if (!opts.skipCurrency && state.currency && r.currencyId !== state.currency) return false;
+    if (q && !(r.name.toLowerCase().includes(q) || (r.nameEn || "").toLowerCase().includes(q) ||
+               (r.nameJa || "").toLowerCase().includes(q) || r.shop.toLowerCase().includes(q) ||
+               r.currency.toLowerCase().includes(q))) return false;
+    if (state.minPer > 0 && !(r.per >= state.minPer)) return false;
+    if (r.cost < state.minCost) return false;
+    // 「独占」物品（不可交易/不可上架）无法上架出售，一律不显示
+    if (r.exclusive && BARE_EXCLUDED) return false;
+    // 「排除低成交量」= 滤掉冷门货，只留下真正卖得动的
+    if (state.excludeLowVol && !r.trades) return false;
+    if (state.maxUnits > 0 && !(r.hasData && r.unitsForSale <= state.maxUnits)) return false;
+    return true;
+  });
+  const k = state.sortKey, d = state.sortDir;
+  rows.sort((a, b) => {
+    let x = a[k], y = b[k];
+    if (k === "name") { x = a.name; y = b.name; }
+    if (k === "currency") { x = a.currency; y = b.currency; }
+    if (typeof x === "string") return d * x.localeCompare(y, "zh-CN");
+    if (x === y) return b.per - a.per;
+    return d * (x - y);
+  });
+  return rows;
+}
+
+/* ---------------------------------------------------------- 渲染 */
+
+function sortHeader() {
+  const cols = [
+    ["name", "物品", "static-left"],
+    ["cost", t("colCost")],
+    ["unitPrice", t("colUnit")],
+    ["value", t("colValue")],
+    ["per", t("colPer")],
+    ["histPer", t("colHist")],
+    ["velocity", t("colVol")],
+    ["listingsCount", t("colListings")],
+  ];
+  return `<tr>${cols.map(([k, label]) => {
+    const cls = state.sortKey === k ? "sorted" : "";
+    const arrow = state.sortKey === k ? (state.sortDir < 0 ? "▼" : "▲") : "";
+    return `<th class="${cls}" data-sort="${k}">${label}<span class="arrow">${arrow}</span></th>`;
+  }).join("")}</tr>`;
+}
+
+function rowHtml(r) {
+  const price = r.hasData ? fmt.format(r.unitPrice) : "—";
+  const value = r.hasData ? fmt.format(r.value) : "—";
+  const per = r.hasData ? fmt2.format(r.per) : "—";
+  const hist = r.histPer > 0 ? fmt2.format(r.histPer) : "—";
+  const vel = r.velocity > 0 ? (r.velocity >= 10 ? fmt.format(r.velocity) : fmt2.format(r.velocity)) : "0";
+  const extras = r.extras.length
+    ? `<span class="badge extra" title="${esc(t("extraTitle", { n: r.extras.length }))}">${esc(t("extraBadge", { n: r.extras.length }))}</span>` : "";
+  const qty = r.amount > 1 ? ` <span class="badge">×${r.amount}</span>` : "";
+  const hopBadge = r.hop ? ` <span class="badge hop2">${esc(t("hopBadge"))}</span>` : "";
+  // 兑换路径：一级兑换（本货币）→ 二级兑换（一级产物不可交易，需再换一次）
+  const path = r.hop
+    ? `<span class="path" title="${esc(t("hopTitle", { mid: r.hopItem }))}">
+         <b>${esc(r.shop)}</b> <span class="arrow">→</span>
+         <b>${esc(r.hop.shop)}</b> <span class="dim">${esc(t("hopVia", { mid: r.hopItem, n: fmt.format(r.hop.need) }))}</span>
+       </span>`
+    : `<span class="path dim">${esc(r.shop)}</span>`;
+  return `<tr>
+    <td>
+      <div class="item">
+        <img loading="lazy" src="${ICON(r.iconId)}" alt="" onerror="this.style.visibility='hidden'">
+        <div class="names">
+          <span class="n">${esc(itemName(r))}${qty} ${extras}${hopBadge}</span>
+          ${path}
+        </div>
+      </div>
+    </td>
+    <td>${fmt.format(r.cost)}</td>
+    <td class="${r.hasData ? "price" : "na"}">${price}</td>
+    <td class="${r.hasData ? "price" : "na"}">${value}</td>
+    <td class="${r.hasData ? "per" : "na"}">${per}</td>
+    <td class="dim">${hist}</td>
+    <td class="vol-cell">
+      <span class="vol-dot ${r.volClass}" title="${esc(t("volTitle", { n: vel }))}"></span>${vel}
+      ${r.unitsSold ? `<span class="sold" title="${esc(t("soldTitle", { n: r.unitsSold }))}">${fmt.format(r.unitsSold)}${esc(t("dealUnit"))}</span>` : `<span class="sold warn" title="${esc(t("noDealTitle"))}">${t("noDeal")}</span>`}
+    </td>
+    <td class="dim">${r.hasData ? fmt.format(r.listingsCount) : "—"}</td>
+  </tr>`;
+}
+
+function currencyHeader(cur, count, totalCount) {
+  const collapsed = state.collapsed.has(cur.id);
+  const extra = count < totalCount ? `（当前筛选 ${count}）` : "";
+  return `<tr class="currency-row ${collapsed ? "collapsed" : ""}" data-currency="${esc(cur.id)}">
+    <td colspan="8">
+      <span class="chev">▼</span>
+      <span style="color:var(--accent)">${esc(itemName(cur))}</span>
+      <span class="dim" style="font-weight:400;font-size:12px;margin-left:8px">
+        ${esc(cur.en || "")}${cur.p ? " · " + esc(cur.p) : ""} · ${t("itemsLabel", { n: totalCount })}${extra}
+      </span>
+    </td>
+  </tr>`;
+}
+
+function esc(s) {
+  return String(s == null ? "" : s).replace(/[&<>"']/g, c =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+let currentRows = [];
+
+function render() {
+  const all = state.decorated;
+  const rows = visibleRows(all);
+  currentRows = rows;
+  const main = $("main");
+
+  if (!rows.length) {
+    main.innerHTML = `<div class="empty">${t("noData")}</div>`;
+    $("totals").textContent = "";
+    return;
+  }
+
+  // 按货币分组；组内保持排序
+  const groups = new Map();
+  for (const r of rows) {
+    if (!groups.has(r.currencyId)) groups.set(r.currencyId, []);
+    groups.get(r.currencyId).push(r);
+  }
+  const curById = new Map(state.data.currencies.map(c => [c.id, c]));
+
+  let html = `<table><thead>${sortHeader()}</thead><tbody>`;
+  let shown = 0;
+  const limit = state.limit;
+  for (const [cid, list] of groups) {
+    const cur = curById.get(cid);
+    // 显示的永远是「当前筛选下、排除独占后」的条数，和实际渲染的行数严格一致
+    html += currencyHeader(cur, list.length, list.length);
+    if (state.collapsed.has(cid)) continue;
+    for (const r of list) {
+      if (shown >= limit) continue;
+      html += rowHtml(r);
+      shown++;
+    }
+  }
+  if (shown < rows.length) {
+    html += `<tr><td colspan="8" style="text-align:center;padding:16px">
+      <button id="more" style="background:var(--panel-2);color:var(--text);border:1px solid var(--line);
+        border-radius:6px;padding:8px 18px;font:inherit;cursor:pointer">
+        ${t("more", { shown, total: rows.length })}</button></td></tr>`;
+  }
+  html += `</tbody></table>`;
+  main.innerHTML = html;
+
+  const more = $("more");
+  if (more) more.onclick = () => { state.limit += 500; render(); };
+
+  const best = rows.find(r => r.hasData);
+  const volNote = state.excludeLowVol
+    ? ` · <span>${t("excludedNote", { n: "<b>" + fmt.format(state.volLimit) + "</b>" })}</span>`
+    : "";
+  const loading = state.rowsLoading ? ` · <span class="dim">正在拉取「${esc(state.world)}」的价格…</span>` : "";
+  $("totals").innerHTML = rows.length
+    ? t("countLine", { n: "<b>" + fmt.format(rows.length) + "</b>", p: "<b>" + fmt.format(rows.filter(r => r.hasData).length) + "</b>" }) +
+      (best ? ` · ` + t("topItem", { name: "<b>" + esc(itemName(best)) + "</b>", per: fmt2.format(best.per) }) : "") + volNote + loading
+    : "";
+  main.scrollTop = 0;
+}
+
+/* ---------------------------------------------------------- 事件 */
+
+function syncSwitch() {
+  const el = $("excludeLowVol");
+  if (!el) return;
+  el.checked = state.excludeLowVol;
+  const sw = el.closest(".switch");
+  if (sw) sw.classList.toggle("active", state.excludeLowVol);
+}
+
+/** 货币下拉框的选项：括号里是「实际会显示多少条」。
+ *  口径和列表完全一致——走同一个筛选函数，且不计入永远不显示的「独占」物品。 */
+function currencyOptionsHtml() {
+  const rows = visibleRows(state.decorated || [], { skipCurrency: true });
+  const counts = new Map();
+  for (const r of rows) counts.set(r.currencyId, (counts.get(r.currencyId) || 0) + 1);
+  return state.data.currencies.map(c => {
+    const n = counts.get(c.id) || 0;
+    return `<option value="${esc(c.id)}"${c === state.defCurrency ? " selected" : ""}>${esc(itemName(c))}（${fmt.format(n)}）</option>`;
+  }).join("");
+}
+
+function refresh() {
+  state.decorated = state.allRows.map(decorate);
+  state.limit = 300;
+  syncCurrencyCounts();
+  updateWorldHint();
+  render();
+}
+
+/** 价格变化后刷新下拉框里的计数。口径与列表一致：当前筛选 + 排除独占。 */
+function syncCurrencyCounts() {
+  const csel = $("currency");
+  if (!csel || state.data.currencies.length < 2) return;
+  const keep = state.currency || (state.defCurrency ? state.defCurrency.id : "");
+  state.currency = "";                       // 统计全部货币，避免自过滤
+  const html = currencyOptionsHtml();
+  state.currency = keep;
+  csel.innerHTML = `<option value="">${esc(t("allCurrencies"))}</option>` + html;
+  csel.value = keep;
+}
+
+/** 服务器选择框下方的小提示：价格是缓存、预抓还是刚拉的，以及还有多久过期。 */
+function updateWorldHint() {
+  const el = $("worldHint");
+  const ago = $("refreshedAt");
+  const btn = $("refreshPrice");
+  if (btn) {
+    btn.disabled = !!state.rowsLoading;
+    btn.textContent = state.rowsLoading ? t("refreshing") : t("refresh");
+  }
+  if (!el) return;
+  if (state.rowsLoading) {
+    el.textContent = state.fetchProgress
+      ? t("pullBatches", { done: state.fetchProgress.split("/")[0], total: state.fetchProgress.split("/")[1] })
+      : t("pulling");
+    el.style.color = "var(--warn)";
+    if (ago) ago.textContent = "";
+    return;
+  }
+  if (state.loadError) {
+    el.textContent = state.loadError;
+    el.style.color = "var(--bad)";
+    if (ago) ago.textContent = "";
+    return;
+  }
+  const n = Object.keys(state.worldMarkets || {}).length;
+  if (n) {
+    el.textContent = t("hasPrices", { n: fmt.format(n) });
+    el.style.color = "var(--muted)";
+    const ageText = cacheAgeText(state.world);
+    if (ago) ago.textContent = ageText;
+  } else {
+    el.textContent = t("switchFetches");
+    el.style.color = "var(--muted)";
+    if (ago) ago.textContent = "";
+  }
+}
+
+function bind() {
+  const wsel = $("world");
+  if (wsel && wsel.tagName === "SELECT") {
+    wsel.addEventListener("change", e => { selectWorld(e.target.value); });
+  }
+  const rp = $("refreshPrice");
+  if (rp) rp.addEventListener("click", () => {
+    if (state.rowsLoading) return;
+    selectWorld(state.world, true);          // 忽略缓存强制刷新
+  });
+  $("currency").addEventListener("change", e => { state.currency = e.target.value; state.limit = 300; render(); });
+  $("q").addEventListener("input", e => { state.q = e.target.value; state.limit = 300; render(); });
+  $("excludeLowVol").addEventListener("change", e => {
+    state.excludeLowVol = e.target.checked;
+    syncSwitch();
+    refresh();
+  });
+  $("volLimit").addEventListener("input", e => {
+    const v = Math.max(0, Number(e.target.value) || 0);
+    state.volLimit = v;
+    $("volLimitLabel").textContent = v;
+    refresh();
+  });
+  $("minPer").addEventListener("input", e => {
+    state.minPer = Math.max(0, Number(e.target.value) || 0);
+    refresh();
+  });
+  $("minCost").addEventListener("input", e => {
+    state.minCost = Math.max(1, Number(e.target.value) || 1);
+    refresh();
+  });
+  $("maxUnits").addEventListener("input", e => {
+    state.maxUnits = Math.max(0, Number(e.target.value) || 0);
+    refresh();
+  });
+
+  $("main").addEventListener("click", (ev) => {
+    const th = ev.target.closest("th[data-sort]");
+    if (th) {
+      const k = th.dataset.sort;
+      if (state.sortKey === k) state.sortDir = -state.sortDir;
+      else { state.sortKey = k; state.sortDir = (k === "name" || k === "currency") ? 1 : -1; }
+      state.limit = 300;
+      render();
+      return;
+    }
+    const head = ev.target.closest("tr.currency-row");
+    if (head) {
+      const id = head.dataset.currency;
+      if (state.collapsed.has(id)) state.collapsed.delete(id); else state.collapsed.add(id);
+      render();
+    }
+  });
+}
+
+/* ---------------------------------------------------------- 启动 */
+
+initTheme();
+initLang();
+
+async function boot() {
+  let data;
+  try {
+    const res = await fetch("data/data.json", { cache: "no-store" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    data = await res.json();
+  } catch (err) {
+    $("main").innerHTML = `<div class="empty">
+      读不到 <code>docs/data/data.json</code>。<br><br>
+      请先运行 <code>python build.py --worlds 神意之地</code> 抓取数据，<br>
+      然后用本地服务器打开本页（<code>python serve.py</code>），不要直接双击 html 文件。
+      <br><br><span class="dim">${esc(err.message)}</span></div>`;
+    return;
+  }
+
+  state.data = data;
+  // 只保留指定的货币，并按 CURRENCY_NAMES 的顺序排列（诗学在最前）
+  const rank = (c) => {
+    const i = CURRENCY_NAMES.indexOf(c.n);
+    return i < 0 ? 999 : i;
+  };
+  data.currencies = data.currencies
+    .filter(c => CURRENCY_NAMES.includes(c.n))
+    .sort((a, b) => rank(a) - rank(b));
+  state.allRows = buildRows();
+  // 物品 id → 名字，用于显示二级兑换路径里的中间物
+  state.itemNames = new Map();
+  for (const c of data.currencies) for (const it of c.items) state.itemNames.set(it.id, it.n);
+
+  // 只有一种货币时，货币下拉框没有意义，藏起来
+  const cfield = $("currency").closest(".field");
+
+  const wsel = $("world");
+  // 服务器清单来自 Universalis；「已抓价」分组不显示（数据里可能还带着，这里过滤掉）
+  const catalog = (data.worldCatalog || []).filter(dc => dc.dc !== "已抓价");
+  if (catalog.length) {
+    // 按大区分组的下拉框：选项值就是服务器名
+    wsel.innerHTML = catalog.map(dc =>
+      `<optgroup label="${esc(dc.label || dc.dc)}">` +
+      dc.worlds.map(w => `<option value="${esc(w)}">${esc(w)}</option>`).join("") +
+      `</optgroup>`).join("");
+    state.world = DEFAULT_WORLD;
+    wsel.value = state.world;
+    if (!wsel.value) {                       // 下拉框里没有这个服时退回第一个
+      state.world = catalog[0].worlds[0];
+      wsel.value = state.world;
+    }
+    wsel.disabled = false;
+  } else if (data.worlds.length > 1) {
+    wsel.innerHTML = data.worlds.map(w => `<option>${esc(w.name)}</option>`).join("");
+    state.world = DEFAULT_WORLD;
+    wsel.value = state.world;
+    if (!wsel.value) { state.world = data.worlds[0].name; wsel.value = state.world; }
+    wsel.disabled = false;
+  } else {
+    // 老数据里没有服务器清单时，退回显示单个服务器名
+    state.world = data.worlds[0].name;
+    wsel.outerHTML = `<div id="world" class="world-static">${esc(state.world)}</div>`;
+  }
+  // 默认服务器的价格：有效缓存（24 小时内）直接用，否则才联网拉一次
+  const bootCache = cachedMarket(state.world);
+  const bootKnown = currentWorldData();
+  state.worldMarkets = bootCache ? bootCache.markets
+                    : (bootKnown && bootKnown.markets) || {};
+  if (!bootCache && !Object.keys(state.worldMarkets).length) {
+    setTimeout(() => selectWorld(state.world), 0);
+  }
+
+  const csel = $("currency");
+  state.defCurrency = data.currencies.find(c => c.n === DEFAULT_CURRENCY_NAME) || data.currencies[0];
+  const def = state.defCurrency;
+  if (data.currencies.length > 1) {
+    csel.insertAdjacentHTML("beforeend", currencyOptionsHtml());
+    csel.value = def.id;
+  } else {
+    if (cfield) cfield.style.display = "none";
+  }
+  state.currency = def.id;
+  $("q").value = state.q;
+
+  const when = new Date(data.generatedAt);
+  state.generatedAt = data.generatedAt;
+  state.patch = data.patch;
+  renderStatus();
+  updateWorldHint();
+
+  const quick = [
+    { label: "全部", apply: () => { state.excludeLowVol = false; state.minPer = 0; $("minPer").value = 0; state.minCost = 1; $("minCost").value = 1; } },
+    { label: "排除低成交量", apply: () => { state.excludeLowVol = true; } },
+    { label: "≥ 100 金币/单位", apply: () => { state.minPer = 100; $("minPer").value = 100; } },
+    { label: "≥ 500 金币/单位", apply: () => { state.minPer = 500; $("minPer").value = 500; } },
+  ];
+  $("chips").innerHTML = quick.map((q, i) => `<button class="chip${i === 0 ? " active" : ""}" data-i="${i}">${q.label}</button>`).join("");
+  $("chips").addEventListener("click", (e) => {
+    const b = e.target.closest(".chip"); if (!b) return;
+    [...$("chips").children].forEach(c => c.classList.remove("active"));
+    b.classList.add("active");
+    quick[Number(b.dataset.i)].apply();
+    syncSwitch();
+    refresh();
+  });
+
+  syncSwitch();
+  bind();
+  refresh();
+}
+
+boot();
+</script>
+</body>
+</html>

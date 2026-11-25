@@ -1,0 +1,24 @@
+# 抓取缓存（体积大、可重建）
+.cache/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# 工作区里的一次性文件
+.acl-recovery/
+.tmp*/
+.probe/
+*.log
+out.log
+err.log
+build*.log
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
