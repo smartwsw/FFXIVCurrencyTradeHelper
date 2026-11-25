@@ -1303,7 +1303,7 @@ async function boot() {
   const cfield = $("currency").closest(".field");
 
   const wsel = $("world");
-  // 服务器清单来自 Universalis；「已抓价」分组不显示（数据里可能还带着，这里过滤掉）
+  // 服务器清单来自 Universalis（构建时写入；万一没有就退回旧字段）
   const catalog = (data.worldCatalog || []).filter(dc => dc.dc !== "已抓价");
   if (catalog.length) {
     // 按大区分组的下拉框：选项值就是服务器名
@@ -1318,16 +1318,19 @@ async function boot() {
       wsel.value = state.world;
     }
     wsel.disabled = false;
-  } else if (data.worlds.length > 1) {
+  } else if ((data.worlds || []).length) {
+    // 老数据：只有「预抓价格的服务器」列表
     wsel.innerHTML = data.worlds.map(w => `<option>${esc(w.name)}</option>`).join("");
     state.world = DEFAULT_WORLD;
     wsel.value = state.world;
     if (!wsel.value) { state.world = data.worlds[0].name; wsel.value = state.world; }
     wsel.disabled = false;
   } else {
-    // 老数据里没有服务器清单时，退回显示单个服务器名
-    state.world = data.worlds[0].name;
-    wsel.outerHTML = `<div id="world" class="world-static">${esc(state.world)}</div>`;
+    // 既没有清单也没有预置价格：至少保证默认服务器可用
+    state.world = DEFAULT_WORLD;
+    wsel.innerHTML = `<option value="${esc(DEFAULT_WORLD)}">${esc(DEFAULT_WORLD)}</option>`;
+    wsel.value = state.world;
+    wsel.disabled = false;
   }
   // 默认服务器的价格：有效缓存（24 小时内）直接用，否则才联网拉一次
   const bootCache = cachedMarket(state.world);

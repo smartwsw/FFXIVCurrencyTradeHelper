@@ -550,6 +550,7 @@ def build_market_map(npcs: list[dict], index: dict, zh: dict,
 # ------------------------------------------------------------ Universalis
 
 def pick_worlds(args) -> list[str]:
+    """要预抓价格的服务器。只有 --with-prices 时才真正用得上。"""
     if args.worlds:
         return list(dict.fromkeys(args.worlds))
     if args.dc:
@@ -559,7 +560,7 @@ def pick_worlds(args) -> list[str]:
             if dc["region"] in (args.dc, universalis.REGION_NAMES.get(args.dc)):
                 return [names[i] for i in dc["worldIds"] if i in names]
         raise SystemExit(f"找不到大区：{args.dc}")
-    return ["神意之地"]
+    return ["海猫茶屋"]
 
 
 def collect_prices(worlds: list[str], item_ids: list[int], max_age_hours: float) -> dict:
@@ -594,6 +595,8 @@ def main() -> int:
     ap.add_argument("--price-age", type=float, default=0.5, help="价格缓存有效期（小时），默认 0.5")
     ap.add_argument("--garland-age", type=float, default=6,
                     help="Garland 商店缓存有效期（小时），默认 6")
+    ap.add_argument("--with-prices", action="store_true",
+                    help="把价格也写进 data.json（默认不写，页面运行时自己拉）")
     ap.add_argument("--no-second-hop", action="store_true",
                     help="跳过「二级兑换」扫描（一级兑换物不可交易时，再去兑换一次）")
     args = ap.parse_args()
@@ -614,40 +617,40 @@ def main() -> int:
         int(it["id"]) for c in garland_data["currencies"] for it in c["items"]
         if str(it["id"]).isdigit()
     })
-    print(f"== 2/2 Universalis：{', '.join(worlds)}，共 {len(item_ids)} 个物品")
-    prices = collect_prices(worlds, item_ids, args.price_age)
 
+    # 价格默认不进 data.json：页面打开时会自己向 Universalis 拉取并缓存 24 小时。
+    # 把价格写进仓库只会让每个版本都存一份大块二进制式差异，没有收益。
+    # 需要离线快照时（比如本地调试、或想确认数据结构）才加 --with-prices。
     worlds_out = []
-    for w in worlds:
-        wstore = prices["worlds"].get(w) or {}
-        worlds_out.append({
-            "name": w,
-            "markets": {k: v for k, v in (wstore.get("data") or {}).items()},
-            "fetchedAt": max((wstore.get("fetched") or {}).values(), default=0),
-        })
+    if args.with_prices:
+        print(f"== 2/2 Universalis：{', '.join(worlds)}，共 {len(item_ids)} 个物品（--with-prices）")
+        prices = collect_prices(worlds, item_ids, args.price_age)
+        for w in worlds:
+            wstore = prices["worlds"].get(w) or {}
+            worlds_out.append({
+                "name": w,
+                "markets": {k: v for k, v in (wstore.get("data") or {}).items()},
+                "fetchedAt": max((wstore.get("fetched") or {}).values(), default=0),
+            })
+    else:
+        print("== 2/2 价格：跳过（页面运行时自行拉取，24 小时缓存）")
 
-    # 服务器清单（Universalis 全量），把已经抓过价的服务器排到最前，方便直接选中
+    # 服务器清单（Universalis 全量）
     try:
         catalog = universalis.world_catalog()
     except Exception as exc:  # noqa: BLE001
         print(f"  ! 服务器清单获取失败：{exc}")
         catalog = []
-    priced = set(worlds)
     if catalog:
-        pref = [{"dc": "已抓价", "label": "已抓价", "worlds": [w for w in worlds]}]
-        catalog = pref + [
-            {**dc, "worlds": [w for w in dc["worlds"] if w not in priced]}
-            for dc in catalog
-        ]
-        catalog = [dc for dc in catalog if dc["worlds"]]
         total = sum(len(dc["worlds"]) for dc in catalog)
         print(f"服务器清单：{len(catalog)} 组 / {total} 个服务器")
 
     payload = {
         "generatedAt": datetime.now(TZ).isoformat(timespec="seconds"),
         "patch": garland_data["patch"],
+        # 预置价格（只有 --with-prices 时非空）
         "worlds": worlds_out,
-        # 页面下拉框用的完整服务器清单（来自 Universalis），预抓价格的服务器在最前
+        # 页面下拉框用的完整服务器清单（来自 Universalis）
         "worldCatalog": catalog,
         "currencies": garland_data["currencies"],
         "sources": {
