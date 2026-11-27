@@ -786,6 +786,7 @@ const state = {
   patch: "",
   priceSource: "cache",
   loadError: "",
+  cacheError: "",
   collapsed: new Set(),
   filtersOpen: false,  // 筛选折叠框是否展开（持久化在 localStorage）
   limit: 300,          // 首屏渲染上限，滚动加载
@@ -876,15 +877,49 @@ function loadLocalPrices() {
   }
 }
 
+/** 写缓存。先清掉过期/无效的服务器记录，再整体写入；
+ *  仍然超配额时退化成「只保留当前服务器」，并把失败原因暴露到界面上
+ *  （之前失败是完全静默的，表现为「每次刷新都重新拉价」）。 */
 function saveLocalPrices(all) {
-  try {
-    localStorage.setItem(LS_KEY, JSON.stringify(all));
-  } catch (err) {
-    // 超出配额时只保留当前服务器，别让整体失效
-    try {
-      localStorage.setItem(LS_KEY, JSON.stringify({ [state.world]: all[state.world] }));
-    } catch { console.warn("价格缓存写入失败", err); }
+  const now = Date.now();
+  const fresh = {};
+  for (const [w, rec] of Object.entries(all)) {
+    if (rec && rec.markets && Object.keys(rec.markets).length &&
+        now - (rec.savedAt || 0) < PRICE_TTL_MS) {
+      fresh[w] = rec;
+    }
   }
+  const tryWrite = (obj) => {
+    try {
+      localStorage.setItem(LS_KEY, JSON.stringify(obj));
+      return true;
+    } catch {
+      return false;
+    }
+  };
+  if (tryWrite(fresh)) { state.cacheError = ""; return; }
+  // 退一步：只存当前服务器
+  if (fresh[state.world] && tryWrite({ [state.world]: fresh[state.world] })) {
+    state.cacheError = "";
+    return;
+  }
+  // 再退一步：连成交明细都丢掉，只留价格与挂单（拉一次就不再重复请求仍然成立）
+  const slim = {};
+  for (const [w, rec] of Object.entries({ [state.world]: fresh[state.world] })) {
+    if (!rec) continue;
+    slim[w] = {
+      savedAt: rec.savedAt,
+      markets: Object.fromEntries(Object.entries(rec.markets).map(([k, v]) => {
+        const { sales, listings, ...rest } = v;
+        return [k, rest];
+      })),
+    };
+  }
+  if (tryWrite(slim)) {
+    state.cacheError = "本地缓存空间不足，已省略成交明细（刷新后仍会重新拉取）";
+    return;
+  }
+  state.cacheError = "本地缓存空间不足，价格无法保存，刷新后会重新拉取";
 }
 
 /** 取一个服务器「仍然有效」的缓存；过期或无缓存返回 null。 */
@@ -1005,9 +1040,13 @@ async function fetchPrices(world, onProgress) {
             unitsForSale: v.unitsForSale || prices.reduce((s, p) => s + p[1], 0),
             // 成交记录压平成 [时间戳(秒), 件数] 数组：7 日窗口要按时间戳筛，
             // 不能直接用 unitsSold（那是「返回的最近 N 笔」的总量，可能横跨数月）。
+            // 只留近 7 天：entries=500 的完整明细存进 localStorage 会撑爆 5 MB 配额，
+            // 而页面统计只用得到这 7 天，其余纯属浪费。
+            // 注意 Universalis 的 timestamp 单位是「秒」，要乘 1000 才能和 Date.now() 比。
             sales: (v.recentHistory || [])
               .map(h => [Number(h.timestamp) || 0, Number(h.quantity) || 0])
-              .filter(s => s[0] > 0 && s[1] > 0),
+              .filter(s => s[0] > 0 && s[1] > 0 &&
+                           s[0] * 1000 > Date.now() - 7 * 24 * 60 * 60 * 1000),
             averagePrice: v.averagePrice || 0,
             listings: prices.slice(0, 6).map(([price, qty]) => ({ price, qty })),
           };
@@ -1434,11 +1473,15 @@ function updateWorldHint() {
     el.textContent = t("hasPrices", { n: fmt.format(n) }) + " · " + scopeDesc();
     el.style.color = "var(--muted)";
     const ageText = cacheAgeText(state.world);
-    if (ago) ago.textContent = ageText;
+    if (ago) {
+      // 缓存写不进去时把原因显示出来，否则用户只会觉得「每次刷新都在重新拉」
+      ago.textContent = state.cacheError ? state.cacheError : ageText;
+      ago.style.color = state.cacheError ? "var(--warn)" : "";
+    }
   } else {
     el.textContent = t("switchFetches");
     el.style.color = "var(--muted)";
-    if (ago) ago.textContent = "";
+    if (ago) { ago.textContent = ""; ago.style.color = ""; }
   }
 }
 
