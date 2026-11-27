@@ -23,15 +23,13 @@
     --row-line: #1b2129;
     --currency-row: #12161d;
     --currency-row-hover: #161c25;
-    --track-bg: #2c3442;
-    --track-knob: #cfd6e2;
-    --track-on: #2f6b4b;
-    --track-knob-on: #7fe3ad;
     --badge-bg: #232a36;
     --badge-extra-bg: #2a2320;
     --badge-extra-fg: #e0a86a;
     --badge-hop-bg: #1f2a38;
     --badge-hop-fg: #7fb2e8;
+    --badge-manual-bg: #2c2438;
+    --badge-manual-fg: #c3a6ea;
     --path-b: #9fb0c8;
     --header-top: #14181f;
     --footer-bg: #0b0d11;
@@ -54,15 +52,13 @@
     --row-line: #e9edf3;
     --currency-row: #eef1f6;
     --currency-row-hover: #e6ebf3;
-    --track-bg: #c9d1dc;
-    --track-knob: #ffffff;
-    --track-on: #2f8f5b;
-    --track-knob-on: #ffffff;
     --badge-bg: #e8edf4;
     --badge-extra-bg: #fbf0dd;
     --badge-extra-fg: #9a6412;
     --badge-hop-bg: #e3edfa;
     --badge-hop-fg: #1f6fd0;
+    --badge-manual-bg: #f0e9fb;
+    --badge-manual-fg: #6b3fa0;
     --path-b: #4a5a70;
     --header-top: #ffffff;
     --footer-bg: #eceff4;
@@ -86,15 +82,13 @@
       --row-line: #e9edf3;
       --currency-row: #eef1f6;
       --currency-row-hover: #e6ebf3;
-      --track-bg: #c9d1dc;
-      --track-knob: #ffffff;
-      --track-on: #2f8f5b;
-      --track-knob-on: #ffffff;
       --badge-bg: #e8edf4;
       --badge-extra-bg: #fbf0dd;
       --badge-extra-fg: #9a6412;
       --badge-hop-bg: #e3edfa;
       --badge-hop-fg: #1f6fd0;
+      --badge-manual-bg: #f0e9fb;
+      --badge-manual-fg: #6b3fa0;
       --path-b: #4a5a70;
       --header-top: #ffffff;
       --footer-bg: #eceff4;
@@ -110,6 +104,8 @@
     font: 14px/1.5 "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
     display: flex;
     flex-direction: column;
+    /* 表格比视口宽时不允许把整页撑出横向滚动条，横向滚动交给 .table-scroll */
+    overflow-x: hidden;
   }
   a { color: var(--accent-2); text-decoration: none; }
   a:hover { text-decoration: underline; }
@@ -146,11 +142,6 @@
   .field label { font-size: 11px; color: var(--muted); letter-spacing: .4px; line-height: 16px; }
   .hint { font-size: 10px; color: var(--muted); line-height: 12px; height: 12px; }
   .ctl { height: 33px; }
-  .switch-wrap {
-    display: flex; flex-direction: column; gap: 4px;
-    justify-content: flex-end; height: 100%;
-  }
-  .chips-row { margin-top: 10px; }
   select, input[type="search"], input[type="number"] {
     background: var(--panel-2); color: var(--text);
     border: 1px solid var(--line); border-radius: 6px;
@@ -174,24 +165,21 @@
   select:disabled { opacity: .65; cursor: not-allowed; }
   input[type="search"] { width: 220px; }
 
-  .switch { display: flex; align-items: center; gap: 9px; cursor: pointer; user-select: none; }
-  .switch input { display: none; }
-  .track {
-    width: 40px; height: 22px; border-radius: 11px; background: var(--track-bg);
-    position: relative; transition: background .18s; flex: none;
-  }
-  .track::after {
-    content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px;
-    border-radius: 50%; background: var(--track-knob); transition: transform .18s, background .18s;
-  }
-  .switch input:checked + .track { background: var(--track-on); }
-  .switch input:checked + .track::after { transform: translateX(18px); background: var(--track-knob-on); }
-  .switch.active .track { box-shadow: 0 0 0 2px #2e4a3a; }
-  .switch-text { display: flex; flex-direction: column; line-height: 1.25; }
-  .switch-text b { font-size: 13px; font-weight: 600; }
-  .switch-text span { font-size: 11px; color: var(--muted); }
-
   .spacer { flex: 1; }
+  /* 筛选面板：独立于上方控件行，独占整行 */
+  .filter-panel {
+    margin-top: 10px; padding-top: 10px;
+    border-top: 1px dashed var(--line);
+  }
+  .filter-panel[hidden] { display: none; }
+  .filter-toggle { display: inline-flex; align-items: center; gap: 6px; }
+  .filter-toggle .chev { transition: transform .15s; }
+  .filter-toggle[aria-expanded="true"] .chev { transform: rotate(180deg); }
+  .filter-count {
+    display: inline-block; min-width: 17px; padding: 0 5px; border-radius: 999px;
+    background: var(--accent); color: #1a1206; font-size: 11px; font-weight: 700; line-height: 17px;
+  }
+  .filter-count[hidden] { display: none; }
   .chips { display: flex; gap: 6px; flex-wrap: wrap; }
   .chip {
     background: var(--panel-2); border: 1px solid var(--line); color: var(--muted);
@@ -248,6 +236,8 @@
   }
   .badge.extra { background: var(--badge-extra-bg); color: var(--badge-extra-fg); }
   .badge.hop2 { background: var(--badge-hop-bg); color: var(--badge-hop-fg); }
+  /* 手动修正：兑换关系与 Garland 原文不同（见 manual_overrides.py） */
+  .badge.manual { background: var(--badge-manual-bg); color: var(--badge-manual-fg); }
   /* 兑换路径：一级商店 → 二级商店（经由中间物） */
   .path { font-size: 11px; color: var(--muted); display: block; line-height: 1.35;
           max-width: 420px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -263,8 +253,11 @@
 
   footer {
     border-top: 1px solid var(--line); padding: 8px 20px; font-size: 11px; color: var(--muted);
-    display: flex; gap: 16px; flex-wrap: wrap; align-items: center; background: var(--footer-bg);
+    display: flex; gap: 8px 16px; flex-wrap: wrap; align-items: center; background: var(--footer-bg);
   }
+  /* 右下角的数据概况（版本 / 货币数 / 条目数 / 服务器 / 更新时间） */
+  footer #status { margin-left: auto; text-align: right; }
+  footer #status b { color: var(--text); font-weight: 600; }
   .load { padding: 60px 20px; text-align: center; color: var(--muted); }
   .bar { height: 3px; background: #1d242e; border-radius: 2px; overflow: hidden; margin-top: 10px; }
   .bar > i { display: block; height: 100%; width: 30%; background: var(--accent); animation: slide 1.1s infinite; }
@@ -272,6 +265,37 @@
   .empty { padding: 40px; text-align: center; color: var(--muted); }
   .totals { font-size: 12px; color: var(--muted); }
   .totals b { color: var(--text); }
+
+  /* ---------------- 手机 / 窄屏 ----------------
+     顶栏控件改成每行两个、占满宽度；表格外层可横向滚动，不把整页撑宽。 */
+  @media (max-width: 720px) {
+    header { padding: 10px 12px 8px; max-width: 100%; overflow-x: hidden; }
+    h1 { font-size: 16px; }
+    .title-row { gap: 8px; }
+    .prefs { gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+    .seg button { padding: 4px 7px; font-size: 11px; }
+    .controls { gap: 8px 10px; margin-top: 10px; }
+    .field { flex: 1 1 calc(50% - 5px); min-width: 0; }
+    .field select, .field input, .field .ctl { width: 100%; }
+    input[type="search"] { width: 100%; }
+    /* 数字框的内联宽度是用来对齐桌面的，窄屏一律占满 */
+    .field input[type="number"] { width: 100% !important; }
+    #refreshPrice { width: 100%; }
+    .filter-toggle { flex: 1 1 100%; justify-content: center; }
+    .filter-toggle .chev { font-size: 12px; }
+    .filter-panel .chips { flex: 1 1 100%; }
+    table { font-size: 12px; min-width: 620px; }
+    .table-scroll { width: 100%; }
+    thead th, tbody td { padding: 6px 8px; }
+    thead th { font-size: 11px; white-space: nowrap; }
+    tbody tr.currency-row td { padding: 9px 8px; }
+    .item img { width: 22px; height: 22px; }
+    .path, .shop { max-width: 180px; }
+    footer { padding: 8px 12px; font-size: 10px; max-width: 100%; }
+    footer #status { margin-left: 0; text-align: left; width: 100%; }
+  }
+  /* 表格外层滚动容器（窄屏才有意义） */
+  .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 </style>
 </head>
 <body>
@@ -279,13 +303,12 @@
 <header>
   <div class="title-row">
     <h1><span class="gold" id="appTitle">今天卖什么</span></h1>
-    <span class="meta" id="status">正在载入…</span>
     <span class="spacer"></span>
     <div class="prefs">
       <div class="seg" id="themeSeg" role="group" aria-label="主题">
-        <button data-theme="auto" title="跟随系统">自动</button>
-        <button data-theme="light" title="亮色">亮</button>
-        <button data-theme="dark" title="暗色">暗</button>
+        <button data-theme="auto" title="跟随系统" data-i18n="themeAuto">自动</button>
+        <button data-theme="light" title="亮色" data-i18n="themeLight">亮</button>
+        <button data-theme="dark" title="暗色" data-i18n="themeDark">暗</button>
       </div>
       <div class="seg" id="langSeg" role="group" aria-label="语言">
         <button data-lang="zh">中文</button>
@@ -297,13 +320,13 @@
 
   <div class="controls">
     <div class="field">
-      <label>服务器</label>
-      <select id="world" class="ctl"></select>
+      <label>统计范围</label>
+      <select id="world" class="ctl" title="可选大区（汇总区内所有服务器的挂单与成交），也可只看单个服务器"></select>
       <span id="worldHint" class="hint"></span>
     </div>
     <div class="field">
       <label>&nbsp;</label>
-      <button id="refreshPrice" class="btn ctl" title="忽略 24 小时缓存，立即从 Universalis 重新拉取当前服务器的价格">更新价格</button>
+      <button id="refreshPrice" class="btn ctl" title="忽略 24 小时缓存，立即重新拉取当前统计范围的价格">更新价格</button>
       <span id="refreshedAt" class="hint"></span>
     </div>
     <div class="field">
@@ -317,20 +340,28 @@
       <span class="hint"></span>
     </div>
 
-    <div class="switch-wrap">
-      <label class="switch" title="滤掉没人买的、以及近 7 天完全没有成交记录的物品，只留下真正卖得动的">
-        <input id="excludeLowVol" type="checkbox">
-        <span class="track"></span>
-        <span class="switch-text">
-          <b>排除低成交量</b>
-        </span>
-      </label>
-      <span class="hint" id="volHintText">去掉日成交 &lt; <span id="volLimitLabel">5</span> 件和无成交的物品</span>
-    </div>
-
+    <!-- 高级筛选：收起时不影响布局。
+         结构与 .field 一致（占位标签 + 控件 + 占位说明），
+         否则 align-items:flex-end 会把只有一行的按钮压到底部。 -->
     <div class="field">
-      <label>成交量阈值（件/天）</label>
-      <input id="volLimit" type="number" class="ctl" min="0" step="1" value="5" style="width:80px">
+      <label>&nbsp;</label>
+      <button id="filterToggle" class="btn ctl filter-toggle" type="button"
+              aria-expanded="false" aria-controls="filterPanel">
+        <span class="chev" aria-hidden="true">▾</span>
+        <span id="filterToggleText">筛选</span>
+        <span class="filter-count" id="filterCount" hidden></span>
+      </button>
+      <span class="hint"></span>
+    </div>
+  </div>
+
+  <!-- 筛选面板独立成块（不放在 .controls 里）：它是整行内容，
+       混在 flex-wrap 的控件行中会被塞进行内剩余空间。 -->
+  <div class="controls filter-panel" id="filterPanel" hidden>
+    <div class="field">
+      <label>成交量阈值（7日均值，件/天）</label>
+      <input id="volLimit" type="number" class="ctl" min="0" step="1" value="50" style="width:96px"
+             title="只看近 7 天日均成交达到该件数的物品。填 0 = 不按成交量筛选">
       <span class="hint"></span>
     </div>
 
@@ -371,7 +402,7 @@
     <a href="https://universalis.app/" target="_blank" rel="noopener">Universalis</a>（市场价）</span>
   <span class="totals" id="totals"></span>
   <span class="spacer"></span>
-  <span id="footCalc">每单位货币卖价 = 最低挂单价 × 兑换数量 ÷ 货币花费（不含税、不含其它材料）</span>
+  <span class="meta" id="status">正在载入…</span>
 </footer>
 
 <script>
@@ -423,18 +454,24 @@ const I18N = {
   zh: {
     title: "今天卖什么",
     server: "服务器", currency: "货币", search: "搜索物品",
+    scope: "统计范围", wholeDc: "大区",
+    themeAuto: "自动", themeAutoTitle: "跟随系统",
+    themeLight: "亮", themeLightTitle: "亮色",
+    themeDark: "暗", themeDarkTitle: "暗色",
+    scopeDcNote: "{dc} 全区", scopeWorldNote: "仅 {w}",
+    scopeDcShort: "大区",
+    fetchingScope: "正在拉取「{s}」的价格…",
     searchHint: "中文 / 英文名，如 神典石",
-    excludeLowVol: "排除低成交量",
-    excludeLowVolHint: "去掉日成交 < {n} 件和无成交的物品",
-    volLimit: "成交量阈值（件/天）", maxUnits: "在售件数 ≤",
+    volLimit: "成交量阈值（7日均值，件/天）", maxUnits: "在售件数 ≤",
     minPer: "最低单价（金币/单位）", minCost: "货币花费 ≥",
     minCostHint: "只看花费达到这个数量的兑换。默认 1 = 全部显示",
     refresh: "更新价格", refreshing: "更新中…",
     colItem: "物品", colCost: "货币花费", colUnit: "最低单价", colValue: "兑换可得",
-    colPer: "每单位货币", colHist: "均价折合", colVol: "日成交", colListings: "挂单数",
+    colPer: "每单位货币", colHist: "均价折合", colVol: "7日均成交（件/天）", colListings: "挂单数",
     noDeal: "无成交", dealUnit: "件",
-    volTitle: "近 7 天日均成交 {n} 件", soldTitle: "近 7 天共成交 {n} 件",
-    noDealTitle: "近 7 天完全没有成交记录，挂单价不一定卖得掉",
+    volTitle: "近 {d} 天共成交 {u} 件，日均 {n} 件/天",
+    soldTitle: "近 {d} 天共成交 {n} 件（右侧为 7 日合计）",
+    noDealTitle: "近 {d} 天完全没有成交记录，挂单价不一定卖得掉",
     allCurrencies: "全部货币",
     loading: "正在载入…", pulling: "正在从 Universalis 拉价…",
     pullBatches: "正在从 Universalis 拉价… {done}/{total} 批",
@@ -444,15 +481,18 @@ const I18N = {
     itemsLabel: "{n} 种可兑换物品", filteredLabel: "（当前筛选 {c}）",
     countLine: "共 {n} 条兑换记录，有挂单 {p} 条",
     topItem: "当前排第一：{name} {per} 金币/单位",
-    excludedNote: " · 已排除日成交 < {n} 件/天或无成交的物品",
+    excludedNote: " · 已过滤近 7 天日均成交 < {n} 件或无成交的物品",
     hopBadge: "二级兑换", hopTitle: "两步兑换：先用货币换「{mid}」，再换成本物品",
     hopVia: "经由 {mid} ×{n}",
+    manualBadge: "手动修正",
+    manualTitle: "这条兑换关系经过人工核对，与 Garland 原文不同（不会被自动构建覆盖）",
     extraTitle: "还需 {n} 种材料", extraBadge: "+{n}",
-    noData: "没有符合条件的物品。试试关掉「排除低成交量」或把阈值调大。",
+    noData: "没有符合条件的物品。试试把成交量阈值调低（或填 0 关闭）。",
     more: "继续加载（已显示 {shown} / {total} 条）",
     footSrc: "数据来源：{garland}（兑换表）· {uni}（市场价）",
-    footCalc: "每单位货币卖价 = 最低挂单价 × 兑换数量 ÷ 货币花费（不含税、不含其它材料）",
-    quickAll: "全部", quickLowVol: "排除低成交量",
+    quickAll: "全部", quickVol50: "≥ 50 件/天",
+    quickVol50Label: "≥ 50 件/天", quickPer100: "≥ 100 金币/单位", quickPer500: "≥ 500 金币/单位",
+    filters: "筛选", filtersHide: "收起筛选",
     failedFetch: "「{w}」价格拉取失败：{e}",
     partialFail: "有 {f}/{t} 批请求失败，部分物品暂无价格",
     verLabel: "游戏版本 {v}", curCount: "货币 {n} 种", rowCount: "可兑换物品 {n} 条",
@@ -461,18 +501,25 @@ const I18N = {
   en: {
     title: "What to Sell Today",
     server: "Server", currency: "Currency", search: "Search item",
+    scope: "Scope", wholeDc: "DC",
+    themeAuto: "Auto", themeAutoTitle: "Follow system",
+    themeLight: "Light", themeLightTitle: "Light theme",
+    themeDark: "Dark", themeDarkTitle: "Dark theme",
+    scopeDcNote: "all of {dc}", scopeWorldNote: "{w} only",
+    scopeDcShort: "DC",
+    fetchingScope: "Fetching prices for {s}…",
     searchHint: "Chinese / English name",
-    excludeLowVol: "Hide low volume",
-    excludeLowVolHint: "Drop items under {n} sales/day or with no sales",
-    volLimit: "Sales threshold (/day)", maxUnits: "Units for sale ≤",
+    volLimit: "Sales threshold (7-day avg, units/day)", maxUnits: "Units for sale ≤",
     minPer: "Min unit price (gil)", minCost: "Currency cost ≥",
     minCostHint: "Only show exchanges costing at least this much. 1 = show all",
     refresh: "Refresh prices", refreshing: "Refreshing…",
     colItem: "Item", colCost: "Cost", colUnit: "Lowest price", colValue: "Per exchange",
-    colPer: "Gil per unit", colHist: "Avg. price", colVol: "Sales/day", colListings: "Listings",
-    noDeal: "no sales", dealUnit: "",
-    volTitle: "{n} sales/day over the last 7 days", soldTitle: "{n} units sold in the last 7 days",
-    noDealTitle: "No sales in the last 7 days — the listing price may never sell",
+    colPer: "Gil per unit", colHist: "Avg. price", colVol: "7-day sales (units/day)", colListings: "Listings",
+    noDeal: "no sales",
+    dealUnit: "",
+    volTitle: "{u} units sold in the last {d} days — {n} per day",
+    soldTitle: "{n} units sold in the last {d} days",
+    noDealTitle: "No sales in the last {d} days — the listing price may never sell",
     allCurrencies: "All currencies",
     loading: "Loading…", pulling: "Fetching prices from Universalis…",
     pullBatches: "Fetching prices from Universalis… {done}/{total}",
@@ -482,15 +529,18 @@ const I18N = {
     itemsLabel: "{n} exchangeable items", filteredLabel: " (filtered: {c})",
     countLine: "{n} exchanges, {p} with listings",
     topItem: "Top: {name} {per} gil/unit",
-    excludedNote: " · excluded items under {n} sales/day or with no sales",
+    excludedNote: " · excluded items under {n} sales/day (7-day average) or with no sales",
     hopBadge: "2-step", hopTitle: "Two-step exchange: buy \"{mid}\" first, then trade for this",
     hopVia: "via {mid} ×{n}",
+    manualBadge: "Manual",
+    manualTitle: "This exchange was verified by hand and differs from Garland (not overwritten by automated builds)",
     extraTitle: "{n} more materials required", extraBadge: "+{n}",
-    noData: "Nothing matches. Try disabling \"Hide low volume\" or raising the threshold.",
+    noData: "Nothing matches. Try lowering the sales threshold (or set it to 0).",
     more: "Load more ({shown} / {total})",
     footSrc: "Sources: {garland} (exchange tables) · {uni} (market prices)",
-    footCalc: "Gil per unit = lowest listing × amount ÷ currency cost (excl. tax and other materials)",
-    quickAll: "All", quickLowVol: "Hide low volume",
+    quickAll: "All", quickVol50: "≥ 50/day",
+    quickVol50Label: "≥ 50/day", quickPer100: "≥ 100 gil/unit", quickPer500: "≥ 500 gil/unit",
+    filters: "Filters", filtersHide: "Hide filters",
     failedFetch: "Failed to load prices for \"{w}\": {e}",
     partialFail: "{f}/{t} batches failed, some items have no price",
     verLabel: "Patch {v}", curCount: "{n} currencies", rowCount: "{n} exchanges",
@@ -499,18 +549,24 @@ const I18N = {
   ja: {
     title: "今日は何を売る？",
     server: "サーバー", currency: "通貨", search: "アイテム検索",
+    scope: "集計範囲", wholeDc: "DC",
+    themeAuto: "自動", themeAutoTitle: "システムに従う",
+    themeLight: "ライト", themeLightTitle: "ライトテーマ",
+    themeDark: "ダーク", themeDarkTitle: "ダークテーマ",
+    scopeDcNote: "{dc} 全域", scopeWorldNote: "{w} のみ",
+    scopeDcShort: "DC",
+    fetchingScope: "「{s}」の価格を取得中…",
     searchHint: "日本語 / 英語名",
-    excludeLowVol: "低取引量を除外",
-    excludeLowVolHint: "1日 {n} 件未満・取引なしを除外",
-    volLimit: "取引量のしきい値（/日）", maxUnits: "出品数 ≤",
+    volLimit: "取引量しきい値（7日平均、件/日）", maxUnits: "出品数 ≤",
     minPer: "最低単価（ギル）", minCost: "通貨コスト ≥",
     minCostHint: "このコスト以上の交換のみ表示。1 = すべて表示",
     refresh: "価格を更新", refreshing: "更新中…",
     colItem: "アイテム", colCost: "コスト", colUnit: "最安値", colValue: "交換あたり",
-    colPer: "通貨1あたり", colHist: "平均価格", colVol: "取引/日", colListings: "出品数",
+    colPer: "通貨1あたり", colHist: "平均価格", colVol: "7日取引（件/日）", colListings: "出品数",
     noDeal: "取引なし", dealUnit: "件",
-    volTitle: "直近7日の1日平均取引 {n} 件", soldTitle: "直近7日の取引合計 {n} 件",
-    noDealTitle: "直近7日は取引なし。出品価格では売れない可能性があります",
+    volTitle: "直近{d}日の取引合計 {u} 件（1日平均 {n} 件）",
+    soldTitle: "直近{d}日の取引合計 {n} 件",
+    noDealTitle: "直近{d}日は取引なし。出品価格では売れない可能性があります",
     allCurrencies: "すべての通貨",
     loading: "読み込み中…", pulling: "Universalis から価格を取得中…",
     pullBatches: "Universalis から価格を取得中… {done}/{total}",
@@ -520,15 +576,18 @@ const I18N = {
     itemsLabel: "交換可能 {n} 件", filteredLabel: "（絞り込み {c}）",
     countLine: "交換 {n} 件、出品あり {p} 件",
     topItem: "トップ：{name} {per} ギル/単位",
-    excludedNote: " · 1日 {n} 件未満・取引なしを除外しました",
+    excludedNote: " · 直近7日の1日平均 {n} 件未満・取引なしを除外しました",
     hopBadge: "2段階", hopTitle: "2段階交換：「{mid}」を経由して入手",
     hopVia: "{mid} ×{n} 経由",
+    manualBadge: "手動修正",
+    manualTitle: "この交換は手動で確認済みで、Garland の記載と異なります（自動ビルドで上書きされません）",
     extraTitle: "他に {n} 種の素材が必要", extraBadge: "+{n}",
-    noData: "該当なし。「低取引量を除外」を切るか、しきい値を上げてください。",
+    noData: "該当なし。取引量しきい値を下げる（または 0 にする）と表示されます。",
     more: "さらに読み込む（{shown} / {total}）",
     footSrc: "データ元：{garland}（交換表）· {uni}（市場価格）",
-    footCalc: "通貨1あたり = 最安出品 × 交換数 ÷ 通貨コスト（税・他素材を除く）",
-    quickAll: "すべて", quickLowVol: "低取引量を除外",
+    quickAll: "すべて", quickVol50: "≥ 50 件/日",
+    quickVol50Label: "≥ 50 件/日", quickPer100: "≥ 100 ギル/個", quickPer500: "≥ 500 ギル/個",
+    filters: "絞り込み", filtersHide: "絞り込みを閉じる",
     failedFetch: "「{w}」の価格取得に失敗：{e}",
     partialFail: "{f}/{t} バッチ失敗、一部の価格がありません",
     verLabel: "パッチ {v}", curCount: "通貨 {n} 種", rowCount: "交換 {n} 件",
@@ -544,12 +603,29 @@ function t(key, vars) {
   return s;
 }
 
-/** 物品名按语言取：zh 用中文名，en/ja 用对应字段，缺失时回退中文名并在旁边显示。 */
+/** 票据类货币的多语言名兜底表（按中文名索引）。
+ *  紫票 / 橙票的兑换表是从物品页的 tradeCurrency 读的，Garland 的 item 文档里
+ *  这几种货币的英语 / 日语名常常取不到（en / ja 为空），界面切到 EN / JA
+ *  就会露出中文名。这里补上官方译名，只在数据缺失时使用。 */
+const CURRENCY_NAME_FALLBACK = {
+  "巧手紫票": { en: "Purple Crafters' Scrip", ja: "クラフタースクリップ:紫貨" },
+  "大地紫票": { en: "Purple Gatherers' Scrip", ja: "ギャザラースクリップ:紫貨" },
+  "巧手橙票": { en: "Orange Crafters' Scrip", ja: "クラフタースクリップ:橙貨" },
+  "大地橙票": { en: "Orange Gatherers' Scrip", ja: "ギャザラースクリップ:橙貨" },
+};
+
+/** 物品名按语言取：zh 用中文名，en/ja 用对应字段，缺失时回退中文名。 */
 function itemName(obj) {
   // obj 可能是货币/物品原始数据（n / en / ja），也可能是列表行（name / nameEn / nameJa）
   const zh = obj.n != null ? obj.n : obj.name;
-  const en = obj.en || obj.nameEn;
-  const ja = obj.ja || obj.nameJa;
+  let en = obj.en || obj.nameEn;
+  let ja = obj.ja || obj.nameJa;
+  // 票据类货币的 en/ja 在 Garland 数据里可能是空的，用兜底表补上
+  const fb = zh && CURRENCY_NAME_FALLBACK[zh];
+  if (fb) {
+    if (!en) en = fb.en;
+    if (!ja) ja = fb.ja;
+  }
   if (LANG === "en") return en || zh || "";
   if (LANG === "ja") return ja || zh || "";
   return zh || "";
@@ -564,7 +640,7 @@ function renderStatus() {
     `${t("verLabel", { v: "<b>" + esc(state.patch || "?") + "</b>" })} · ` +
     `${t("curCount", { n: "<b>" + state.data.currencies.length + "</b>" })} · ` +
     `${t("rowCount", { n: "<b>" + fmt.format(state.allRows.length) + "</b>" })} · ` +
-    `${t("server")} <b>${esc(state.world)}</b> · ` +
+    `${t("scope")} <b>${esc(scopeLabel())}</b> · ` +
     t("updatedAt", { t: when.toLocaleString(loc, { hour12: false }) });
 }
 
@@ -600,8 +676,17 @@ function applyStaticText() {
   const set = (id, s) => { const el = $(id); if (el) el.textContent = s; };
   const setHtml = (id, s) => { const el = $(id); if (el) el.innerHTML = s; };
   set("appTitle", t("title"));
+  syncFilterBox();
+  // 主题按钮（自动 / 亮 / 暗）：文字和悬停说明都要跟着语言变
+  const themeKeys = { auto: ["themeAuto", "themeAutoTitle"], light: ["themeLight", "themeLightTitle"], dark: ["themeDark", "themeDarkTitle"] };
+  for (const b of document.querySelectorAll("#themeSeg button")) {
+    const k = themeKeys[b.dataset.theme];
+    if (!k) continue;
+    b.textContent = t(k[0]);
+    b.title = t(k[1]);
+  }
   const labels = document.querySelectorAll(".controls .field > label");
-  const order = ["server", "currency", "search", null, "volLimit", "maxUnits", "minPer", "minCost"];
+  const order = ["scope", "currency", "search", null, "volLimit", "maxUnits", "minPer", "minCost"];
   // 按 .field 顺序对应文案（含「更新价格」那格用 null 跳过）
   let i = 0;
   for (const el of labels) {
@@ -611,17 +696,14 @@ function applyStaticText() {
   }
   const ph = $("q");
   if (ph) ph.placeholder = t("searchHint");
-  const sw = document.querySelector(".switch .switch-text b");
-  if (sw) sw.textContent = t("excludeLowVol");
-  const swHint = $("volHintText");
-  if (swHint) swHint.textContent = t("excludeLowVolHint", { n: state.volLimit });
   const btn = $("refreshPrice");
   if (btn && !state.rowsLoading) btn.textContent = t("refresh");
-  const chips = document.querySelectorAll("#chips .chip");
-  if (chips.length >= 2) {
-    chips[0].textContent = t("quickAll");
-    chips[1].textContent = t("quickLowVol");
+  // 通用机制：任何带 data-i18n="key" 的元素都按当前语言刷新文字
+  for (const el of document.querySelectorAll("[data-i18n]")) {
+    el.textContent = t(el.dataset.i18n);
   }
+  // 统计范围下拉框里的大区选项带「大区 / DC」后缀，必须重建才能跟着语言变
+  buildScopeOptions();
   const src = document.getElementById("footSrc");
   if (src) {
     src.innerHTML = t("footSrc", {
@@ -629,7 +711,6 @@ function applyStaticText() {
       uni: `<a href="https://universalis.app/" target="_blank" rel="noopener">Universalis</a>`,
     });
   }
-  set("footCalc", t("footCalc"));
 }
 
 function initLang() {
@@ -654,16 +735,18 @@ const CURRENCY_NAMES = [
 ];
 const DEFAULT_CURRENCY_NAME = "亚拉戈诗学神典石";
 const DEFAULT_WORLD = "海猫茶屋";   // 默认服务器
+// 默认统计范围是大区（含默认服务器所在的那个大区）；想只看单服仍可切回
+const DEFAULT_DC = "猫小胖";
 // 「独占」物品（不可交易/不可上架）永远卖不掉，一律不显示。
 // 列表、货币下拉框括号、分组表头都用这一条口径，保证数字和实际行数对得上。
 const BARE_EXCLUDED = true;
 const state = {
   data: null,
   world: null,
+  scope: "dc",       // "dc" = 按大区统计，"world" = 只看单个服务器
   sortKey: "per",
   sortDir: -1,
-  excludeLowVol: false,
-  volLimit: 5,
+  volLimit: 50,      // 近 7 天日均成交阈值；0 = 不按成交量筛选
   minPer: 0,
   // 默认 1 = 不过滤。之前默认 50 会把「1 张票换 1 个鱼饵」这类小额兑换一起挡掉
   minCost: 1,
@@ -678,10 +761,19 @@ const state = {
   priceSource: "cache",
   loadError: "",
   collapsed: new Set(),
+  filtersOpen: false,  // 筛选折叠框是否展开（持久化在 localStorage）
   limit: 300,          // 首屏渲染上限，滚动加载
 };
 
 const $ = (id) => document.getElementById(id);
+/** 合并连续调用：停手 wait 毫秒后只执行最后一次。用于数值筛选这类高频输入。 */
+function debounce(fn, wait = 250) {
+  let timer = null;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => { timer = null; fn(...args); }, wait);
+  };
+}
 const fmt = new Intl.NumberFormat("zh-CN", { maximumFractionDigits: 0 });
 const fmt2 = new Intl.NumberFormat("zh-CN", { maximumFractionDigits: 2 });
 
@@ -696,11 +788,58 @@ function currentWorldData() {
   return state.data.worlds.find(x => x.name === state.world) || null;
 }
 
+/* ---------------- 统计范围：大区 / 服务器 ----------------
+   Universalis 的 URL 第一段既可以是服务器名，也可以是大区名（DC）；
+   传大区名时返回的数据覆盖该大区内所有服务器（listings / 成交记录都汇总），
+   返回体里会用 dcName 而不是 worldName 标识。
+   state.world 统一存「当前统计范围」（服务器名或大区名），state.scope 标明是哪种。 */
+function isDcName(name) {
+  const catalog = (state.data && state.data.worldCatalog) || [];
+  return catalog.some(dc => dc.dc === name);
+}
+
+/** 根据名字判断并记录当前范围类型。 */
+function setScope(name) {
+  state.world = name;
+  state.scope = isDcName(name) ? "dc" : "world";
+  return state.scope;
+}
+
+/** 当前范围显示用的名字：大区优先用带地区标注的 label（如「猫小胖（国服）」）。 */
+function scopeLabel(name = state.world) {
+  const catalog = (state.data && state.data.worldCatalog) || [];
+  const dc = catalog.find(d => d.dc === name);
+  return dc ? (dc.label || dc.dc) : name;
+}
+
+/** 构建「统计范围」下拉框的选项（大区分组，每组第一项是大区本身）。
+ *  后缀「大区 / DC」是界面文案，切换语言必须重建，否则会停留在旧语言。
+ *  重建时保留当前选中值。 */
+function buildScopeOptions() {
+  const wsel = $("world");
+  const catalog = state.dcCatalog || [];
+  if (!wsel || !catalog.length) return;
+  const keep = wsel.value || state.world;
+  wsel.innerHTML = catalog.map(dc => {
+    // 大区标签里的「（国服）」「（繁中）」等地区标注本身不随语言变，只翻译「大区 / DC」
+    const label = esc(dc.label || dc.dc);
+    return `<optgroup label="${label}">` +
+      `<option value="${esc(dc.dc)}" class="dc-option">${label} · ${esc(t("wholeDc"))}</option>` +
+      dc.worlds.map(w => `<option value="${esc(w)}">${esc(w)}</option>`).join("") +
+      `</optgroup>`;
+  }).join("");
+  // 还原选中项（重建 innerHTML 会丢失选中状态）
+  if (keep) wsel.value = keep;
+  if (!wsel.value) wsel.value = state.world || catalog[0].dc;
+}
+
 /* ---------------- 价格缓存（localStorage，24 小时有效） ----------------
    价格数据量不大（几百到几千条），存进浏览器本地即可。
-   同一个服务器 24 小时内只拉一次，过期或手动点「更新价格」才会重新请求。 */
+   同一个服务器 24 小时内只拉一次，过期或手动点「更新价格」才会重新请求。
+   v2：成交统计从 unitsSold 改成 sales（[时间戳, 件数] 列表），旧缓存没有该字段，
+   升版本号让 v1 缓存自然失效，避免升级后整列显示 0。 */
 const PRICE_TTL_MS = 24 * 60 * 60 * 1000;   // 24 小时
-const LS_KEY = "whattosell.prices.v1";
+const LS_KEY = "whattosell.prices.v2";
 
 function loadLocalPrices() {
   try {
@@ -738,10 +877,10 @@ function cacheAgeText(world) {
   return mins < 60 ? t("updatedMin", { m: mins, h: left }) : t("updatedHour", { m: Math.round(mins / 60), h: left });
 }
 
-/** 选中服务器。force=true 时忽略缓存强制重新拉价（手动更新按钮）。
+/** 选中统计范围（服务器或大区）。force=true 时忽略缓存强制重新拉价（手动更新按钮）。
  *  默认优先用本地有效缓存 → 构建时预抓的数据 → 最后才真的联网。 */
 async function selectWorld(name, force = false) {
-  state.world = name;
+  setScope(name);          // 同时设置 state.world 与 state.scope（DC / 单服）
   state.loadError = "";
 
   if (!force) {
@@ -789,7 +928,7 @@ async function selectWorld(name, force = false) {
     if (meta.failed) state.loadError = `有 ${meta.failed}/${meta.total} 批请求失败，部分物品暂无价格`;
   } catch (err) {
     console.warn("拉价失败", err);
-    state.loadError = t("failedFetch", { w: name, e: err.message });
+    state.loadError = t("failedFetch", { w: scopeLabel(name), e: err.message });
   } finally {
     state.rowsLoading = false;
     state.fetchProgress = "";
@@ -815,9 +954,9 @@ async function fetchPrices(world, onProgress) {
   const CONCURRENCY = 4;
 
   async function runBatch(chunk) {
-    // entries 决定成交统计的采样量（Universalis 用它算 unitsSold / velocity / 均价）：
-    //   entries=0 不计算（全 0）；entries=1 只采样 1 条会严重低估；100 才准
-    const url = `https://universalis.app/api/v2/${encodeURIComponent(world)}/${chunk.join(",")}?listings=6&entries=100`;
+    // entries 决定成交记录的采样量：7 日成交要靠 recentHistory 里的时间戳自己算，
+    // 采样太少会漏掉窗口内的记录（尤其是热门物品），所以取 500 笔。
+    const url = `https://universalis.app/api/v2/${encodeURIComponent(world)}/${chunk.join(",")}?listings=6&entries=500`;
     let lastErr = null;
     for (let attempt = 0; attempt < 3; attempt++) {
       const ctrl = new AbortController();
@@ -838,9 +977,11 @@ async function fetchPrices(world, onProgress) {
             minLot: prices.length ? prices[0][1] : 0,
             listingsCount: v.listingsCount || prices.length,
             unitsForSale: v.unitsForSale || prices.reduce((s, p) => s + p[1], 0),
-            unitsSold: v.unitsSold || 0,
-            recentHistoryCount: v.recentHistoryCount || 0,
-            regularSaleVelocity: v.regularSaleVelocity || 0,
+            // 成交记录压平成 [时间戳(秒), 件数] 数组：7 日窗口要按时间戳筛，
+            // 不能直接用 unitsSold（那是「返回的最近 N 笔」的总量，可能横跨数月）。
+            sales: (v.recentHistory || [])
+              .map(h => [Number(h.timestamp) || 0, Number(h.quantity) || 0])
+              .filter(s => s[0] > 0 && s[1] > 0),
             averagePrice: v.averagePrice || 0,
             listings: prices.slice(0, 6).map(([price, qty]) => ({ price, qty })),
           };
@@ -905,10 +1046,33 @@ function buildRows() {
         hop: (it.h && it.h[0]) || null,
         // 二级兑换的中间物名字（用于显示路径），下面按货币表补全
         hopItemId: (it.h && it.h[0]) ? it.h[0].id : null,
+        // 手动修正标记：兑换关系与 Garland 原文不同（见 manual_overrides.py）
+        manual: it.m === 1,
       });
     }
   }
   return rows;
+}
+
+/* ---------------- 成交统计：统一按「近 7 天」 ----------------
+   不再用 Universalis 的 unitsSold：它是「返回的最近 N 笔」的件数合计，
+   样本可能横跨几个月（实测 100 笔里有 73 天前的成交），当成 7 日数据会严重失真。
+   这里按成交流水的时间戳自己切 7 天窗口，且只保留窗口内的记录。 */
+const SALES_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+const SALES_WINDOW_DAYS = 7;
+
+/** 统计近 7 天的成交：{ units 7 天总件数, perDay 日均件数, count 成交笔数 }。 */
+function salesInWindow(market) {
+  const sales = (market && market.sales) || [];
+  if (!sales.length) return { units: 0, perDay: 0, count: 0 };
+  const cutoff = Date.now() - SALES_WINDOW_MS;
+  let units = 0;
+  let count = 0;
+  for (const s of sales) {
+    const ts = s[0] * 1000;      // Universalis 的时间戳是秒
+    if (ts >= cutoff) { units += s[1]; count++; }
+  }
+  return { units, perDay: units / SALES_WINDOW_DAYS, count };
 }
 
 function decorate(row) {
@@ -925,8 +1089,11 @@ function decorate(row) {
   row.value = value;
   row.unitPrice = unitPrice;
   row.histPer = histValuePer;
-  row.velocity = m ? m.regularSaleVelocity || 0 : 0;
-  row.unitsSold = m ? m.unitsSold || 0 : 0;
+  // 统一按近 7 天成交：列显示日均件数，同时保留总件数用于提示
+  const sale = salesInWindow(m);
+  row.soldUnits = sale.units;            // 近 7 天成交总件数
+  row.saleCount = sale.count;            // 近 7 天成交笔数
+  row.velocity = sale.perDay;            // 近 7 天日均成交件数（列显示这个）
   row.listingsCount = m ? m.listingsCount || 0 : 0;
   row.unitsForSale = m ? m.unitsForSale || 0 : 0;
   row.minLot = m ? m.minLot || 0 : 0;
@@ -937,13 +1104,14 @@ function decorate(row) {
     row.hopItem = mid || `#${row.hopItemId}`;
   }
   // 冷门（成交量低）= 没人买 + 没人挂。
-  //   有成交记录时只看日成交件数；
+  //   有成交记录时只看近 7 天日均成交件数；
   //   国服成交历史经常为空，此时退回用「同时在售件数」：件数少 = 冷门，多 = 热门。
   const inSale = row.unitsForSale;
-  const hasHistory = row.velocity > 0 || row.unitsSold > 0;
+  const hasHistory = row.soldUnits > 0;
   const coldBySales = hasHistory ? row.velocity < state.volLimit : inSale <= Math.max(20, state.volLimit * 6);
   row.cold = row.hasData && coldBySales;
   // 反过来定义「有成交量」：近 7 天确实成交过，且日均成交不低于阈值。
+  // 阈值本身仍是「件/天」，所以这里直接用日均值比较。
   // 没有价格的当然也谈不上成交。
   row.trades = row.hasData && hasHistory && row.velocity >= state.volLimit;
   row.volClass = !row.hasData ? "vol-low"
@@ -966,8 +1134,8 @@ function visibleRows(all, opts = {}) {
     if (r.cost < state.minCost) return false;
     // 「独占」物品（不可交易/不可上架）无法上架出售，一律不显示
     if (r.exclusive && BARE_EXCLUDED) return false;
-    // 「排除低成交量」= 滤掉冷门货，只留下真正卖得动的
-    if (state.excludeLowVol && !r.trades) return false;
+    // 成交量阈值：近 7 天日均成交低于阈值的滤掉；阈值填 0 = 不按成交量筛选
+    if (state.volLimit > 0 && !r.trades) return false;
     if (state.maxUnits > 0 && !(r.hasData && r.unitsForSale <= state.maxUnits)) return false;
     return true;
   });
@@ -1008,11 +1176,12 @@ function rowHtml(r) {
   const value = r.hasData ? fmt.format(r.value) : "—";
   const per = r.hasData ? fmt2.format(r.per) : "—";
   const hist = r.histPer > 0 ? fmt2.format(r.histPer) : "—";
-  const vel = r.velocity > 0 ? (r.velocity >= 10 ? fmt.format(r.velocity) : fmt2.format(r.velocity)) : "0";
-  const extras = r.extras.length
+  const vel = r.velocity > 0 ? (r.velocity >= 10 ? fmt.format(r.velocity) : fmt2.format(r.velocity)) : "0";  const extras = r.extras.length
     ? `<span class="badge extra" title="${esc(t("extraTitle", { n: r.extras.length }))}">${esc(t("extraBadge", { n: r.extras.length }))}</span>` : "";
   const qty = r.amount > 1 ? ` <span class="badge">×${r.amount}</span>` : "";
   const hopBadge = r.hop ? ` <span class="badge hop2">${esc(t("hopBadge"))}</span>` : "";
+  const manualBadge = r.manual
+    ? ` <span class="badge manual" title="${esc(t("manualTitle"))}">${esc(t("manualBadge"))}</span>` : "";
   // 兑换路径：一级兑换（本货币）→ 二级兑换（一级产物不可交易，需再换一次）
   const path = r.hop
     ? `<span class="path" title="${esc(t("hopTitle", { mid: r.hopItem }))}">
@@ -1025,7 +1194,7 @@ function rowHtml(r) {
       <div class="item">
         <img loading="lazy" src="${ICON(r.iconId)}" alt="" onerror="this.style.visibility='hidden'">
         <div class="names">
-          <span class="n">${esc(itemName(r))}${qty} ${extras}${hopBadge}</span>
+          <span class="n">${esc(itemName(r))}${qty} ${extras}${hopBadge}${manualBadge}</span>
           ${path}
         </div>
       </div>
@@ -1036,8 +1205,8 @@ function rowHtml(r) {
     <td class="${r.hasData ? "per" : "na"}">${per}</td>
     <td class="dim">${hist}</td>
     <td class="vol-cell">
-      <span class="vol-dot ${r.volClass}" title="${esc(t("volTitle", { n: vel }))}"></span>${vel}
-      ${r.unitsSold ? `<span class="sold" title="${esc(t("soldTitle", { n: r.unitsSold }))}">${fmt.format(r.unitsSold)}${esc(t("dealUnit"))}</span>` : `<span class="sold warn" title="${esc(t("noDealTitle"))}">${t("noDeal")}</span>`}
+      <span class="vol-dot ${r.volClass}" title="${esc(t("volTitle", { n: vel, d: SALES_WINDOW_DAYS, u: fmt.format(r.soldUnits) }))}"></span>${vel}
+      ${r.soldUnits ? `<span class="sold" title="${esc(t("soldTitle", { n: fmt.format(r.soldUnits), d: SALES_WINDOW_DAYS }))}">${fmt.format(r.soldUnits)}${esc(t("dealUnit"))}</span>` : `<span class="sold warn" title="${esc(t("noDealTitle", { d: SALES_WINDOW_DAYS }))}">${t("noDeal")}</span>`}
     </td>
     <td class="dim">${r.hasData ? fmt.format(r.listingsCount) : "—"}</td>
   </tr>`;
@@ -1105,16 +1274,17 @@ function render() {
         ${t("more", { shown, total: rows.length })}</button></td></tr>`;
   }
   html += `</tbody></table>`;
-  main.innerHTML = html;
+  // 窄屏下表格比视口宽，包一层横向滚动容器，避免整页被撑宽
+  main.innerHTML = `<div class="table-scroll">${html}</div>`;
 
   const more = $("more");
   if (more) more.onclick = () => { state.limit += 500; render(); };
 
   const best = rows.find(r => r.hasData);
-  const volNote = state.excludeLowVol
+  const volNote = state.volLimit > 0
     ? ` · <span>${t("excludedNote", { n: "<b>" + fmt.format(state.volLimit) + "</b>" })}</span>`
     : "";
-  const loading = state.rowsLoading ? ` · <span class="dim">正在拉取「${esc(state.world)}」的价格…</span>` : "";
+  const loading = state.rowsLoading ? ` · <span class="dim">${esc(t("fetchingScope", { s: scopeLabel() }))}</span>` : "";
   $("totals").innerHTML = rows.length
     ? t("countLine", { n: "<b>" + fmt.format(rows.length) + "</b>", p: "<b>" + fmt.format(rows.filter(r => r.hasData).length) + "</b>" }) +
       (best ? ` · ` + t("topItem", { name: "<b>" + esc(itemName(best)) + "</b>", per: fmt2.format(best.per) }) : "") + volNote + loading
@@ -1124,12 +1294,50 @@ function render() {
 
 /* ---------------------------------------------------------- 事件 */
 
-function syncSwitch() {
-  const el = $("excludeLowVol");
-  if (!el) return;
-  el.checked = state.excludeLowVol;
-  const sw = el.closest(".switch");
-  if (sw) sw.classList.toggle("active", state.excludeLowVol);
+/* ---------------- 筛选折叠框 ----------------
+   手机上顶栏控件太多会占掉大半屏，所以除服务器 / 价格 / 货币 / 搜索之外
+   的筛选项都收进这个面板。展开状态记在 localStorage。
+   面板收起时，按钮上显示「生效中的筛选条数」，避免筛选被藏起来还不知道。 */
+const FILTERS_KEY = "whattosell.filtersOpen";
+
+/** 当前有几项「非默认」的筛选在生效（不包括货币和搜索，它们在顶栏常显）。 */
+function activeFilterCount() {
+  let n = 0;
+  if (state.volLimit > 0) n++;
+  if (state.maxUnits > 0) n++;
+  if (state.minPer > 0) n++;
+  if (state.minCost > 1) n++;
+  return n;
+}
+
+function syncFilterBox() {
+  const panel = $("filterPanel");
+  const btn = $("filterToggle");
+  if (!panel || !btn) return;
+  panel.hidden = !state.filtersOpen;
+  btn.setAttribute("aria-expanded", state.filtersOpen ? "true" : "false");
+  const label = $("filterToggleText");
+  if (label) label.textContent = state.filtersOpen ? t("filtersHide") : t("filters");
+  const n = activeFilterCount();
+  const cnt = $("filterCount");
+  if (cnt) {
+    cnt.hidden = n === 0;
+    cnt.textContent = String(n);
+  }
+}
+
+function toggleFilters() {
+  state.filtersOpen = !state.filtersOpen;
+  try { localStorage.setItem(FILTERS_KEY, state.filtersOpen ? "1" : "0"); } catch { /* ignore */ }
+  syncFilterBox();
+}
+
+/** 默认展开筛选面板（记忆过用户的选择则以记忆为准）。 */
+function initFilterBox() {
+  let saved = null;
+  try { saved = localStorage.getItem(FILTERS_KEY); } catch { /* ignore */ }
+  state.filtersOpen = saved === "0" ? false : true;
+  syncFilterBox();
 }
 
 /** 货币下拉框的选项：括号里是「实际会显示多少条」。
@@ -1149,6 +1357,7 @@ function refresh() {
   state.limit = 300;
   syncCurrencyCounts();
   updateWorldHint();
+  syncFilterBox();
   render();
 }
 
@@ -1165,6 +1374,12 @@ function syncCurrencyCounts() {
 }
 
 /** 服务器选择框下方的小提示：价格是缓存、预抓还是刚拉的，以及还有多久过期。 */
+/** 当前范围的一句话描述，用在提示文字里。
+ *  大区情况下下拉框已显示大区名，这里只补「全区」说明，避免重复。 */
+function scopeDesc() {
+  return state.scope === "dc" ? t("scopeDcShort") : t("scopeWorldNote", { w: state.world });
+}
+
 function updateWorldHint() {
   const el = $("worldHint");
   const ago = $("refreshedAt");
@@ -1190,7 +1405,7 @@ function updateWorldHint() {
   }
   const n = Object.keys(state.worldMarkets || {}).length;
   if (n) {
-    el.textContent = t("hasPrices", { n: fmt.format(n) });
+    el.textContent = t("hasPrices", { n: fmt.format(n) }) + " · " + scopeDesc();
     el.style.color = "var(--muted)";
     const ageText = cacheAgeText(state.world);
     if (ago) ago.textContent = ageText;
@@ -1213,29 +1428,33 @@ function bind() {
   });
   $("currency").addEventListener("change", e => { state.currency = e.target.value; state.limit = 300; render(); });
   $("q").addEventListener("input", e => { state.q = e.target.value; state.limit = 300; render(); });
-  $("excludeLowVol").addEventListener("change", e => {
-    state.excludeLowVol = e.target.checked;
-    syncSwitch();
-    refresh();
-  });
+  const ft = $("filterToggle");
+  if (ft) ft.addEventListener("click", toggleFilters);
+  // 数值筛选：每次按键都整套重渲染会让输入卡顿、光标跳动，
+  // 所以打字时只更新状态，停手 250ms 后再刷新列表（合并连续输入）。
+  const debouncedRefresh = debounce(refresh, 250);
   $("volLimit").addEventListener("input", e => {
-    const v = Math.max(0, Number(e.target.value) || 0);
-    state.volLimit = v;
-    $("volLimitLabel").textContent = v;
-    refresh();
+    // 阈值 0 = 不按成交量筛选
+    state.volLimit = Math.max(0, Number(e.target.value) || 0);
+    debouncedRefresh();
   });
   $("minPer").addEventListener("input", e => {
     state.minPer = Math.max(0, Number(e.target.value) || 0);
-    refresh();
+    debouncedRefresh();
   });
   $("minCost").addEventListener("input", e => {
     state.minCost = Math.max(1, Number(e.target.value) || 1);
-    refresh();
+    debouncedRefresh();
   });
   $("maxUnits").addEventListener("input", e => {
     state.maxUnits = Math.max(0, Number(e.target.value) || 0);
-    refresh();
+    debouncedRefresh();
   });
+  // 失焦（change）时立刻结算一次，保证「输入完就一定能看到结果」，
+  // 不用等 debounce 的 250ms，也覆盖用户直接点别处的情况。
+  for (const id of ["volLimit", "minPer", "minCost", "maxUnits"]) {
+    $(id).addEventListener("change", () => refresh());
+  }
 
   $("main").addEventListener("click", (ev) => {
     const th = ev.target.closest("th[data-sort]");
@@ -1260,6 +1479,7 @@ function bind() {
 
 initTheme();
 initLang();
+initFilterBox();
 
 async function boot() {
   let data;
@@ -1303,32 +1523,27 @@ async function boot() {
   const cfield = $("currency").closest(".field");
 
   const wsel = $("world");
-  // 服务器清单来自 Universalis（构建时写入；万一没有就退回旧字段）
+  // 统计范围清单来自 Universalis（构建时写入；万一没有就退回旧字段）
   const catalog = (data.worldCatalog || []).filter(dc => dc.dc !== "已抓价");
+  state.dcCatalog = catalog;
   if (catalog.length) {
-    // 按大区分组的下拉框：选项值就是服务器名
-    wsel.innerHTML = catalog.map(dc =>
-      `<optgroup label="${esc(dc.label || dc.dc)}">` +
-      dc.worlds.map(w => `<option value="${esc(w)}">${esc(w)}</option>`).join("") +
-      `</optgroup>`).join("");
-    state.world = DEFAULT_WORLD;
+    buildScopeOptions();           // 语言切换时也会调它重建
+    // 默认按大区统计；默认大区不存在时退回第一个大区
+    const defDc = catalog.some(dc => dc.dc === DEFAULT_DC) ? DEFAULT_DC : catalog[0].dc;
+    setScope(defDc);
     wsel.value = state.world;
-    if (!wsel.value) {                       // 下拉框里没有这个服时退回第一个
-      state.world = catalog[0].worlds[0];
-      wsel.value = state.world;
-    }
     wsel.disabled = false;
   } else if ((data.worlds || []).length) {
     // 老数据：只有「预抓价格的服务器」列表
     wsel.innerHTML = data.worlds.map(w => `<option>${esc(w.name)}</option>`).join("");
-    state.world = DEFAULT_WORLD;
+    setScope(DEFAULT_WORLD);
     wsel.value = state.world;
-    if (!wsel.value) { state.world = data.worlds[0].name; wsel.value = state.world; }
+    if (!wsel.value) { setScope(data.worlds[0].name); wsel.value = state.world; }
     wsel.disabled = false;
   } else {
-    // 既没有清单也没有预置价格：至少保证默认服务器可用
-    state.world = DEFAULT_WORLD;
+    // 既没有清单也没有预置价格：至少保证默认范围可用
     wsel.innerHTML = `<option value="${esc(DEFAULT_WORLD)}">${esc(DEFAULT_WORLD)}</option>`;
+    setScope(DEFAULT_WORLD);
     wsel.value = state.world;
     wsel.disabled = false;
   }
@@ -1359,23 +1574,23 @@ async function boot() {
   renderStatus();
   updateWorldHint();
 
+  // 快捷筛选：标签存文案 key，切换语言时由 applyStaticText 重新渲染
   const quick = [
-    { label: "全部", apply: () => { state.excludeLowVol = false; state.minPer = 0; $("minPer").value = 0; state.minCost = 1; $("minCost").value = 1; } },
-    { label: "排除低成交量", apply: () => { state.excludeLowVol = true; } },
-    { label: "≥ 100 金币/单位", apply: () => { state.minPer = 100; $("minPer").value = 100; } },
-    { label: "≥ 500 金币/单位", apply: () => { state.minPer = 500; $("minPer").value = 500; } },
+    { key: "quickAll", apply: () => { state.volLimit = 0; $("volLimit").value = 0; state.minPer = 0; $("minPer").value = 0; state.minCost = 1; $("minCost").value = 1; } },
+    { key: "quickVol50Label", apply: () => { state.volLimit = 50; $("volLimit").value = 50; } },
+    { key: "quickPer100", apply: () => { state.minPer = 100; $("minPer").value = 100; } },
+    { key: "quickPer500", apply: () => { state.minPer = 500; $("minPer").value = 500; } },
   ];
-  $("chips").innerHTML = quick.map((q, i) => `<button class="chip${i === 0 ? " active" : ""}" data-i="${i}">${q.label}</button>`).join("");
+  $("chips").innerHTML = quick.map((q, i) =>
+    `<button class="chip${i === 0 ? " active" : ""}" data-i="${i}" data-i18n="${q.key}">${t(q.key)}</button>`).join("");
   $("chips").addEventListener("click", (e) => {
     const b = e.target.closest(".chip"); if (!b) return;
     [...$("chips").children].forEach(c => c.classList.remove("active"));
     b.classList.add("active");
     quick[Number(b.dataset.i)].apply();
-    syncSwitch();
     refresh();
   });
 
-  syncSwitch();
   bind();
   refresh();
 }
