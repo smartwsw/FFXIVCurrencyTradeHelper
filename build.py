@@ -11,6 +11,7 @@
   python build.py --worlds 神意之地 晨曦王座           # 指定服务器
   python build.py --dc 陆行鸟                        # 整个大区
   python build.py --worlds 神意之地 --workers 16      # 提高 NPC 抓取并发
+  python build.py --pretty                           # data.json 以缩进写出，便于人读
 """
 from __future__ import annotations
 
@@ -24,6 +25,7 @@ from datetime import datetime, timezone, timedelta
 
 import garland
 import localize
+import manual_overrides
 import secondhop
 import shopnames
 import universalis
@@ -189,7 +191,6 @@ def scan_npc_shops(workers: int = 10, no_second_hop: bool = False) -> dict:
     ja_names = localize.fetch_ja_names(sorted(all_needed), 10, load_cache, save_cache)
 
     return build_market_map(npcs, index, zh, details, patch, scrip_shops, second_hop, ja_names)
-
 
 def ensure_details(details: dict, ids: list[str], workers: int = 16) -> None:
     """确保 ids 的详情里带有「是否可交易」标记。
@@ -448,10 +449,14 @@ def build_market_map(npcs: list[dict], index: dict, zh: dict,
     def info(iid: str) -> dict:
         d = details.get(iid) or {}
         g = index.get(iid) or {}
+        name = zh.get(iid) or d.get("n") or g.get("n") or f"#{iid}"
+        fb = manual_overrides.CURRENCY_NAME_FALLBACK.get(name) or {}
         return {
-            "name": zh.get(iid) or d.get("n") or g.get("n") or f"#{iid}",
-            "en": d.get("n") or g.get("n") or "",
-            "ja": ja_names.get(iid, ""),
+            "name": name,
+            # 紫票 / 橙票这类从 tradeCurrency 读到的货币，Garland 物品文档里常常
+            # 没有英语 / 日语名（d["n"] / ja_names 为空），用兜底表补上
+            "en": d.get("n") or g.get("n") or fb.get("en") or "",
+            "ja": ja_names.get(iid) or fb.get("ja") or "",
             "kind": d.get("t") if d.get("t") is not None else g.get("t"),
             "icon": d.get("icon") or g.get("c"),
             "patch": d.get("p") or g.get("p") or "",
@@ -597,6 +602,8 @@ def main() -> int:
                     help="Garland 商店缓存有效期（小时），默认 6")
     ap.add_argument("--with-prices", action="store_true",
                     help="把价格也写进 data.json（默认不写，页面运行时自己拉）")
+    ap.add_argument("--pretty", action="store_true",
+                    help="以 indent=2 缩进写出 data.json（体积变大，只便于人读/比对差异）")
     ap.add_argument("--no-second-hop", action="store_true",
                     help="跳过「二级兑换」扫描（一级兑换物不可交易时，再去兑换一次）")
     args = ap.parse_args()
@@ -611,6 +618,12 @@ def main() -> int:
         save_cache("garland", garland_data)
     else:
         print("Garland 数据命中缓存（--garland-age 内未过期）")
+
+    # 手动修正（manual_overrides.py）：自动抓取之后再应用，每次都生效，
+    # 所以不会被下一次构建覆盖。缓存里存的是抓取原始结果，修正不写回缓存。
+    fixed = manual_overrides.apply(garland_data)
+    if fixed:
+        print(f"手动修正：{fixed} 条（{manual_overrides.describe()}）")
 
     worlds = pick_worlds(args)
     item_ids = sorted({
@@ -660,8 +673,16 @@ def main() -> int:
         },
     }
     out = os.path.join(DATA_DIR, "data.json")
-    with open(out, "w", encoding="utf-8") as fh:
-        json.dump(payload, fh, ensure_ascii=False, separators=(",", ":"))
+    # 默认紧凑单行（发布用）；--pretty 时缩进，便于人读和逐行比对。
+    # 先写临时文件再替换，避免中途出错把已有 data.json 写坏。
+    tmp = out + ".tmp"
+    with open(tmp, "w", encoding="utf-8", newline="\n") as fh:
+        if args.pretty:
+            json.dump(payload, fh, ensure_ascii=False, indent=2)
+            fh.write("\n")
+        else:
+            json.dump(payload, fh, ensure_ascii=False, separators=(",", ":"))
+    os.replace(tmp, out)
     size = os.path.getsize(out) / 1e6
     print(f"写出 {out}（{size:.2f} MB），总用时 {time.time() - t_start:.0f}s")
     return 0
