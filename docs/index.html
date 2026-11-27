@@ -170,8 +170,20 @@
   .filter-panel {
     margin-top: 10px; padding-top: 10px;
     border-top: 1px dashed var(--line);
+    /* 标签长短不一，底部用统一基线对齐；数字框看起来才是一排 */
+    align-items: flex-end;
   }
   .filter-panel[hidden] { display: none; }
+  /* 面板里的数值框统一宽度：之前各写一个宽度（88/96/100），
+     视觉上一排框参差不齐，像是没对齐。 */
+  .filter-panel .field > input[type="number"] {
+    width: 120px;
+  }
+  /* 标签统一高度并靠下，保证一排输入框在同一水平线上 */
+  .filter-panel .field > label {
+    display: flex; align-items: flex-end;
+    height: 32px; line-height: 16px;
+  }
   .filter-toggle { display: inline-flex; align-items: center; gap: 6px; }
   .filter-toggle .chev { transition: transform .15s; }
   .filter-toggle[aria-expanded="true"] .chev { transform: rotate(180deg); }
@@ -360,27 +372,27 @@
   <div class="controls filter-panel" id="filterPanel" hidden>
     <div class="field">
       <label>成交量阈值（7日均值，件/天）</label>
-      <input id="volLimit" type="number" class="ctl" min="0" step="1" value="50" style="width:96px"
+      <input id="volLimit" type="number" class="ctl" min="0" step="1" value="50"
              title="只看近 7 天日均成交达到该件数的物品。填 0 = 不按成交量筛选">
       <span class="hint"></span>
     </div>
 
     <div class="field">
       <label>在售件数 ≤</label>
-      <input id="maxUnits" type="number" class="ctl" min="0" step="10" value="0" style="width:88px"
+      <input id="maxUnits" type="number" class="ctl" min="0" step="10" value="0"
              title="国服 Universalis 的成交记录经常为空，此时用「同时在售件数」判断冷热：数值越小说明挂的人越少">
       <span class="hint"></span>
     </div>
 
     <div class="field">
       <label>最低单价（金币/单位）</label>
-      <input id="minPer" type="number" class="ctl" min="0" step="10" value="0" style="width:100px">
+      <input id="minPer" type="number" class="ctl" min="0" step="10" value="0">
       <span class="hint"></span>
     </div>
 
     <div class="field">
       <label>货币花费 ≥</label>
-      <input id="minCost" type="number" class="ctl" min="1" step="10" value="1" style="width:88px"
+      <input id="minCost" type="number" class="ctl" min="1" step="10" value="1"
              title="只看花费达到这个数量的兑换。默认 1 = 全部显示；调高可以滤掉小额兑换（比如用 1 张票换的鱼饵）">
       <span class="hint"></span>
     </div>
