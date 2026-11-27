@@ -174,15 +174,25 @@
     align-items: flex-end;
   }
   .filter-panel[hidden] { display: none; }
+  /* 面板里的每个 field 都是「标签 / 输入框」一个整体，
+     绝不能被 flex 拆到不同行——否则标签会单独跑到上一行，
+     看起来像是指着别的输入框。 */
+  .filter-panel .field {
+    flex: 0 0 auto;          /* 不参与拉伸，宽度由内容决定 */
+  }
   /* 面板里的数值框统一宽度：之前各写一个宽度（88/96/100），
      视觉上一排框参差不齐，像是没对齐。 */
   .filter-panel .field > input[type="number"] {
     width: 120px;
   }
-  /* 标签统一高度并靠下，保证一排输入框在同一水平线上 */
+  /* 标签统一高度并靠下，保证一排输入框在同一水平线上。
+     限宽是为了让长标签（成交量阈值）自己折行，不把整列撑宽。
+     用 padding-top 把单行标签压到底部，双行标签刚好填满 32px。 */
   .filter-panel .field > label {
-    display: flex; align-items: flex-end;
-    height: 32px; line-height: 16px;
+    display: block;
+    min-height: 32px; line-height: 16px;
+    padding-top: 16px; box-sizing: border-box;
+    max-width: 160px;
   }
   .filter-toggle { display: inline-flex; align-items: center; gap: 6px; }
   .filter-toggle .chev { transition: transform .15s; }
@@ -295,6 +305,13 @@
     #refreshPrice { width: 100%; }
     .filter-toggle { flex: 1 1 100%; justify-content: center; }
     .filter-toggle .chev { font-size: 12px; }
+    /* 筛选面板里每个 field 独占半宽，标签允许换行，
+       否则长标签（成交量阈值）会把列撑破，被挤到单独一行。 */
+    .filter-panel .field { flex: 1 1 calc(50% - 5px); max-width: 100%; }
+    .filter-panel .field > label {
+      height: auto; min-height: 32px; max-width: 100%; word-break: break-word;
+    }
+    .filter-panel .field > input[type="number"] { width: 100% !important; }
     .filter-panel .chips { flex: 1 1 100%; }
     table { font-size: 12px; min-width: 620px; }
     .table-scroll { width: 100%; }
@@ -332,7 +349,7 @@
 
   <div class="controls">
     <div class="field">
-      <label>统计范围</label>
+      <label data-i18n="scope">统计范围</label>
       <select id="world" class="ctl" title="可选大区（汇总区内所有服务器的挂单与成交），也可只看单个服务器"></select>
       <span id="worldHint" class="hint"></span>
     </div>
@@ -342,12 +359,12 @@
       <span id="refreshedAt" class="hint"></span>
     </div>
     <div class="field">
-      <label>货币</label>
+      <label data-i18n="currency">货币</label>
       <select id="currency" class="ctl"><option value="">全部货币</option></select>
       <span class="hint"></span>
     </div>
     <div class="field">
-      <label>搜索物品</label>
+      <label data-i18n="search">搜索物品</label>
       <input id="q" type="search" class="ctl" placeholder="中文 / 英文名，如 神典石">
       <span class="hint"></span>
     </div>
@@ -371,27 +388,27 @@
        混在 flex-wrap 的控件行中会被塞进行内剩余空间。 -->
   <div class="controls filter-panel" id="filterPanel" hidden>
     <div class="field">
-      <label>成交量阈值（7日均值，件/天）</label>
+      <label data-i18n="volLimit">成交量阈值（7日均值，件/天）</label>
       <input id="volLimit" type="number" class="ctl" min="0" step="1" value="50"
              title="只看近 7 天日均成交达到该件数的物品。填 0 = 不按成交量筛选">
       <span class="hint"></span>
     </div>
 
     <div class="field">
-      <label>在售件数 ≤</label>
+      <label data-i18n="maxUnits">在售件数 ≤</label>
       <input id="maxUnits" type="number" class="ctl" min="0" step="10" value="0"
              title="国服 Universalis 的成交记录经常为空，此时用「同时在售件数」判断冷热：数值越小说明挂的人越少">
       <span class="hint"></span>
     </div>
 
     <div class="field">
-      <label>最低单价（金币/单位）</label>
+      <label data-i18n="minPer">最低单价（金币/单位）</label>
       <input id="minPer" type="number" class="ctl" min="0" step="10" value="0">
       <span class="hint"></span>
     </div>
 
     <div class="field">
-      <label>货币花费 ≥</label>
+      <label data-i18n="minCost">货币花费 ≥</label>
       <input id="minCost" type="number" class="ctl" min="1" step="10" value="1"
              title="只看花费达到这个数量的兑换。默认 1 = 全部显示；调高可以滤掉小额兑换（比如用 1 张票换的鱼饵）">
       <span class="hint"></span>
@@ -697,15 +714,10 @@ function applyStaticText() {
     b.textContent = t(k[0]);
     b.title = t(k[1]);
   }
-  const labels = document.querySelectorAll(".controls .field > label");
-  const order = ["scope", "currency", "search", null, "volLimit", "maxUnits", "minPer", "minCost"];
-  // 按 .field 顺序对应文案（含「更新价格」那格用 null 跳过）
-  let i = 0;
-  for (const el of labels) {
-    const key = order[i++];
-    if (key) el.textContent = t(key);
-    else el.innerHTML = "&nbsp;";
-  }
+  // 顶栏 / 筛选面板的标签：用 data-i18n 精确绑定到文案 key。
+  // 早先这里按「.field 的出现顺序」逐个套用文案数组，只要增删一个控件
+  // （比如加入「筛选」按钮）整条序列就会错位一个，标签会指到别的输入框上。
+  // 现在每个 label 自己写明 key，统一由下面的 [data-i18n] 循环处理。
   const ph = $("q");
   if (ph) ph.placeholder = t("searchHint");
   const btn = $("refreshPrice");
