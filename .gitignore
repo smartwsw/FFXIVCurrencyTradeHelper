@@ -10,8 +10,12 @@ venv/
 
 # 工作区里的一次性文件
 .acl-recovery/
+.acl-backup-*.json
+.acl-backup-*.json.ps1
+.acl-report-*.jsonl
 .tmp*/
 .probe/
+docs/data/*.tmp
 *.log
 out.log
 err.log
