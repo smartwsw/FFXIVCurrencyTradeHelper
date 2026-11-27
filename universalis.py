@@ -20,14 +20,16 @@ API = "https://universalis.app/api/v2"
 UA = "WhatToSell/1.0 (FFXIV currency-to-gil helper)"
 BATCH = 100  # 单次请求的物品数量上限（Universalis 建议 <=100）
 
-# 国服/韩服/日服大区的中文显示名
+# 国服 / 繁中 / 韩服大区的中文显示名。
+# 注意：「陸行鳥」是繁体中文服（台服），不是日服——日服的大区是 Elemental / Gaia /
+# Mana / Meteor 这些英文名，本身不需要加注。
 REGION_NAMES = {
     "Elemental": "Elemental", "Gaia": "Gaia", "Mana": "Mana", "Meteor": "Meteor",
     "Aether": "Aether", "Primal": "Primal", "Crystal": "Crystal", "Dynamis": "Dynamis",
     "Chaos": "Chaos", "Light": "Light", "Materia": "Materia",
     "陆行鸟": "陆行鸟（国服）", "莫古力": "莫古力（国服）",
     "猫小胖": "猫小胖（国服）", "豆豆柴": "豆豆柴（国服）",
-    "한국": "한국（韩服）", "陸行鳥": "陸行鳥（日服）",
+    "한국": "한국（韩服）", "陸行鳥": "陸行鳥（繁中）",
 }
 
 
@@ -92,7 +94,7 @@ def world_catalog() -> list[dict]:
 def market(world: str, item_ids: Iterable[int], listings: int = 6, concurrency: int = 4) -> dict[int, dict]:
     """拉取单个世界下多个物品的当前市场数据。
 
-    返回 {itemID: {minPrice, listings:[{price, qty}], unitsSold, listingsCount, ...}}
+    返回 {itemID: {minPrice, listings:[{price, qty}], sales, listingsCount, ...}}
     没有列表的物品会被跳过（该世界无人挂单）。
 
     分批并发发出：Universalis 对部分批次会挂很久（甚至超时），串行拉 94 批要十几分钟；
@@ -106,12 +108,11 @@ def market(world: str, item_ids: Iterable[int], listings: int = 6, concurrency: 
 
     def fetch_one(chunk: list[int]):
         path = ",".join(str(i) for i in chunk)
-        # entries 决定成交统计的采样量：Universalis 的 unitsSold / regularSaleVelocity /
-        # averagePrice 都是「基于本次返回的历史条数」算出来的。
-        #   entries=0   → 完全不计算，全返回 0（页面会全部显示「无成交」）
-        #   entries=1   → 只采样 1 条，成交量被严重低估
-        #   entries=100 → 官方默认采样量，统计数据才准确
-        query = urllib.parse.urlencode({"listings": listings, "entries": 100})
+        # entries 决定成交记录的采样量：页面统一按「近 7 天」统计成交，
+        # 而 7 天窗口要按 recentHistory 的时间戳自己切，所以采样必须足够大，
+        # 太少会让窗口内记录缺失（热门物品尤其明显）。取 500 笔。
+        # 注意不要用 unitsSold：那是「返回的最近 N 笔」的合计，可能横跨数月。
+        query = urllib.parse.urlencode({"listings": listings, "entries": 500})
         try:
             return chunk, _get(f"{API}/{urllib.parse.quote(world)}/{path}?{query}")
         except Exception as exc:  # noqa: BLE001 - 单批失败不影响整体
@@ -143,6 +144,14 @@ def market(world: str, item_ids: Iterable[int], listings: int = 6, concurrency: 
                     "unitsSold": int(payload.get("unitsSold") or 0),
                     "recentHistoryCount": int(payload.get("recentHistoryCount") or 0),
                     "regularSaleVelocity": float(payload.get("regularSaleVelocity") or 0),
+                    # 成交记录压平成 [时间戳(秒), 件数]，页面据此切 7 天窗口。
+                    # 上面三项是 Universalis 的原生统计，保留给调试用；页面不读它们，
+                    # 因为 unitsSold 是「返回的最近 N 笔」合计，可能横跨数月，不等于 7 天。
+                    "sales": [
+                        [int(h.get("timestamp") or 0), int(h.get("quantity") or 0)]
+                        for h in (payload.get("recentHistory") or [])
+                        if int(h.get("timestamp") or 0) > 0 and int(h.get("quantity") or 0) > 0
+                    ],
                     "averagePrice": float(payload.get("averagePrice") or 0),
                     "listings": [{"price": p, "qty": q} for p, q in prices[:listings]],
                 }
